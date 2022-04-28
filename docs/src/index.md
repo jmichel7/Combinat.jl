@@ -25,8 +25,8 @@ stirling2
 catalan(::Integer)
 groupby
 tally
+tally_sorted
 collectby
-cartesian
 unique_sorted!
 diagblocks
 blocks(m::AbstractMatrix)
