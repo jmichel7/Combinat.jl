@@ -910,6 +910,44 @@ function partitions(set::AbstractVector)
   vcat((partitions(set,i) for i in eachindex(set))...)
 end
 
+function partitions_mset(set::AbstractVector,k)
+  set=sort(set)
+  res=[Vector{eltype(set)}[]]
+  function inner(k,rest)
+    l=length(res[end])
+    n=length(res)
+    if k==1 
+      if l==0 || res[end][end]<=rest push!(res[end],rest) 
+         return true
+      else return false
+      end
+    else
+      start=true
+      anysuccess=false
+      for p in Combinations(rest,1:length(rest)-k+1)
+        if l>0 && res[end][l]>p continue end
+        if !start push!(res,res[end][1:l]) end
+        push!(res[end],p)
+        success=inner(k-1,msetdiff(rest,p))
+        if !success 
+          if !start pop!(res) 
+          else resize!(res[end],l)
+          end
+        else start=false
+        end
+        anysuccess=success || anysuccess
+      end
+      return anysuccess
+    end
+  end
+  inner(k,set)
+  return res
+end
+
+function partitions_mset(set::AbstractVector)
+  vcat((partitions_mset(set,i) for i in eachindex(set))...)
+end
+
 """
 `stirling1(n,k)`
 
