@@ -1619,7 +1619,14 @@ make `Primes.factor` fast for integers <300 by memoizing it
 factor(n::Integer)=if n<300 get!(()->Primes.factor(n),dict_factor,n)
                    else Primes.factor(n) end
 
-" `prime_residues(n)` the numbers less than `n` and prime to `n` "
+"""
+`prime_residues(n)` the numbers less than `n` and prime to `n`
+```julia-repl
+julia> [prime_residues(24)]
+1-element Vector{Vector{Int64}}:
+ [1, 5, 7, 11, 13, 17, 19, 23]
+```
+"""
 function prime_residues(n)
   if n==1 return [0] end
   pp=trues(n) # use a sieve to go fast
@@ -1629,16 +1636,31 @@ function prime_residues(n)
   (1:n)[pp]
 end
 
-" `divisors(n)` the increasing list of divisors of `n`."
+"""
+`divisors(n)` the increasing list of divisors of `n`.
+```julia-repl
+julia> [divisors(24)]
+1-element Vector{Vector{Int64}}:
+ [1, 2, 3, 4, 6, 8, 12, 24]
+```
+"""
 function divisors(n::Integer)::Vector{Int}
   if n==1 return [1] end
   sort(vec(map(prod,Iterators.product((p.^(0:m) for (p,m) in factor(n))...))))
 end
 
 """
-  `primitiveroot(m::Integer)` a primitive root `mod. m`,
-  that is generating multiplicatively `prime_residues(m)`.
-  It exists if `m` is of the form `4`, `2p^a` or `p^a` for `p` prime>2.
+`primitiveroot(m::Integer)`  a primitive root `mod.  m`, that is generating
+multiplicatively  `prime_residues(m)`, or nothing if  there is no primitive
+root `mod. m`.
+
+A  primitive root exists if `m` is of the form `4`, `2p^a` or `p^a` for `p`
+prime>2.
+
+```julia-repl
+julia> primitiveroot(23)
+5
+```
 """
 function primitiveroot(m::Integer)
   if m==2 return 1
@@ -1664,16 +1686,16 @@ const bern=Rational{BigInt}[-1//2]
 Except for `B₁=-1/2`  the Bernoulli numbers for odd indices are zero.
     
 ```julia_repl
-julia> Combinat.bernoulli(4)
+julia> bernoulli(4)
 -1//30
 
-julia> Combinat.bernoulli(10)
+julia> bernoulli(10)
 5//66
 
-julia> Combinat.bernoulli(12) # there is no simple pattern in Bernoulli numbers
+julia> bernoulli(12) # there is no simple pattern in Bernoulli numbers
 -691//2730
 
-julia> Combinat.bernoulli(50) # and they grow fairly fast
+julia> bernoulli(50) # and they grow fairly fast
 495057205241079648212477525//66
 ```
 """

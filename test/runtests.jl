@@ -82,5 +82,8 @@ end
 @test mytest("Combinat.jl","tableaux([[2,1],[1]])","8-element Vector{Vector{Vector{Vector{Int64}}}}:\n [[[1, 2], [3]], [[4]]]\n [[[1, 2], [4]], [[3]]]\n [[[1, 3], [2]], [[4]]]\n [[[1, 3], [4]], [[2]]]\n [[[1, 4], [2]], [[3]]]\n [[[1, 4], [3]], [[2]]]\n [[[2, 3], [4]], [[1]]]\n [[[2, 4], [3]], [[1]]]")
 @test mytest("Combinat.jl","tableaux([2,2])","2-element Vector{Vector{Vector{Int64}}}:\n [[1, 2], [3, 4]]\n [[1, 3], [2, 4]]")
 @test mytest("Combinat.jl","robinson_schensted([2,3,4,1])","([[1, 3, 4], [2]], [[1, 2, 3], [4]])")
+@test mytest("Combinat.jl","[prime_residues(24)]","1-element Vector{Vector{Int64}}:\n [1, 5, 7, 11, 13, 17, 19, 23]")
+@test mytest("Combinat.jl","[divisors(24)]","1-element Vector{Vector{Int64}}:\n [1, 2, 3, 4, 6, 8, 12, 24]")
+@test mytest("Combinat.jl","primitiveroot(23)","5")
 end
 end
