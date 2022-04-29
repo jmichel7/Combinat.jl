@@ -60,8 +60,8 @@ both packages could be made more compatible.
 """
 module Combinat
 export combinations, ncombinations, arrangements, narrangements,
-  partitions, npartitions, partition_tuples, npartition_tuples,
-  compositions, ncompositions, multisets, nmultisets, 
+  partitions, npartitions, partition_tuples, 
+  npartition_tuples, compositions, ncompositions, multisets, nmultisets, 
   lcm_partitions, gcd_partitions, conjugate_partition, dominates, tableaux,
     robinson_schensted,
   bell, stirling1, stirling2, catalan,
@@ -180,6 +180,8 @@ function tally(v::AbstractArray;dict=false)
   else tally_sorted(issorted(v) ? v : sort(v))
   end
 end
+
+tally(v::AbstractRange;k...)=v.=>1
 
 tally(v;k...)=tally(collect(v);k...) # for iterables
 
@@ -889,7 +891,8 @@ julia> partitions(1:4,2)
  [[1, 4], [2, 3]]
  [[1], [2, 3, 4]]
 ```
-Note  that there is currently no ordered or multiset counterpart.
+Note  that `unique(sort.(partitions(mset[,k])))`  is a  version which works
+for a multiset `mset`. There is currently no ordered counterpart.
 """
 function partitions(set::AbstractVector,k)
   res=Vector{Vector{eltype(set)}}[]
@@ -908,44 +911,6 @@ end
 
 function partitions(set::AbstractVector)
   vcat((partitions(set,i) for i in eachindex(set))...)
-end
-
-function partitions_mset(set::AbstractVector,k)
-  set=sort(set)
-  res=[Vector{eltype(set)}[]]
-  function inner(k,rest)
-    l=length(res[end])
-    n=length(res)
-    if k==1 
-      if l==0 || res[end][end]<=rest push!(res[end],rest) 
-         return true
-      else return false
-      end
-    else
-      start=true
-      anysuccess=false
-      for p in Combinations(rest,1:length(rest)-k+1)
-        if l>0 && res[end][l]>p continue end
-        if !start push!(res,res[end][1:l]) end
-        push!(res[end],p)
-        success=inner(k-1,msetdiff(rest,p))
-        if !success 
-          if !start pop!(res) 
-          else resize!(res[end],l)
-          end
-        else start=false
-        end
-        anysuccess=success || anysuccess
-      end
-      return anysuccess
-    end
-  end
-  inner(k,set)
-  return res
-end
-
-function partitions_mset(set::AbstractVector)
-  vcat((partitions_mset(set,i) for i in eachindex(set))...)
 end
 
 """
