@@ -328,7 +328,7 @@ function Base.iterate(S::Combinations)
   S.s[v], v
 end
 
-Base.eltype(x::Combinations)=Vector{Int}
+Base.eltype(x::Combinations{T}) where T=Vector{T}
 Base.IteratorSize(::Type{Combinations{T}}) where T=Base.SizeUnknown()
 Base.show(io::IO,x::Combinations)=print(io,"Combinations(",vcat(fill.(x.s,x.m)...),",",x.k,")")
 
@@ -598,18 +598,16 @@ julia> collect(a)
  [8, 1, 1]
 ```
 """
-struct Partitions
-  n::Int
+struct Partitions{T<:Integer}
+  n::T
 end
 
-Partitions(n::Integer)=Partitions(n)
-
-Base.eltype(x::Partitions)=Vector{Int}
-Base.IteratorSize(::Type{Partitions})=Base.SizeUnknown()
+Base.eltype(x::Partitions{T}) where T =Vector{T}
+Base.IteratorSize(::Type{Partitions{T}}) where T=Base.SizeUnknown()
 Base.show(io::IO,x::Partitions)=print(io,"Partitions(",x.n,")")
 
-function Base.iterate(s::Partitions)
-  v=fill(1,s.n)
+function Base.iterate(s::Partitions{T})where T
+  v=fill(one(T),s.n)
   copy(v),v
 end
 
