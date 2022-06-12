@@ -21,11 +21,11 @@ some functions on partitions and permutations:
 
 counting functions:
 
-`bell, stirling1, stirling2, catalan`
+`bell, stirling1, stirling2, catalan, bernoulli`
 
 number theory
 
-`divisors, prime_residues, primitiveroot, bernoulli`
+`divisors, prime_residues, primitiveroot`
 
 some structural manipulations not yet in Julia:
 
@@ -64,11 +64,10 @@ export combinations, ncombinations, arrangements, narrangements,
   npartition_tuples, compositions, ncompositions, multisets, nmultisets, 
   lcm_partitions, gcd_partitions, conjugate_partition, dominates, tableaux,
     robinson_schensted,
-  bell, stirling1, stirling2, catalan,
+  bell, stirling1, stirling2, catalan, bernoulli,
   groupby, tally, tally_sorted, collectby, unique_sorted!,
   blocks, diagblocks,
-  divisors, prime_residues, primitiveroot, bernoulli
-export factor # users need to avoid conflict with Primes.factor
+  divisors, prime_residues, primitiveroot
 
 #--------------------- Structural manipulations -------------------
 """
@@ -1163,42 +1162,74 @@ julia> ncompositions(4)
 
 julia> compositions(4)
 8-element Vector{Vector{Int64}}:
- [1, 1, 1, 1]
- [2, 1, 1]
- [1, 2, 1]
- [3, 1]
- [1, 1, 2]
- [2, 2]
- [1, 3]
  [4]
+ [1, 3]
+ [1, 1, 2]
+ [1, 1, 1, 1]
+ [1, 2, 1]
+ [2, 2]
+ [2, 1, 1]
+ [3, 1]
 
 julia> ncompositions(4,2)
 3
 
 julia> compositions(4,2)
 3-element Vector{Vector{Int64}}:
- [3, 1]
- [2, 2]
  [1, 3]
+ [2, 2]
+ [3, 1]
 
 julia> compositions(4,2;min=0)
 5-element Vector{Vector{Int64}}:
- [4, 0]
- [3, 1]
- [2, 2]
- [1, 3]
  [0, 4]
+ [1, 3]
+ [2, 2]
+ [3, 1]
+ [4, 0]
 ```
 """
-function compositions(n;min=1)
-  if iszero(n) return [Int[]] end
+function compositions(n::T;min=1)where T<:Integer
+  if min>n return Vector{T}[] end
   if min<=0 error("min must be ≥1") end
-  vcat(map(i->map(c->push!(c,i),compositions(n-i;min)),min:n)...)
+  res=[T[]]
+  addcompositions(res,n;min)
+  res
 end
 
-function compositions(n,k;min=1)
-  if isone(k) return [[n]] end
-  vcat(map(i->map(c->push!(c,i),compositions(n-i,k-1;min)),min:n-min)...)
+function pushcopy!(v,i) # faster than push!(copy(v),i)
+  res=copyto!(similar(v,length(v)+1),v)
+  res[end]=i
+  res
+end
+
+function addcompositions(res::Vector{Vector{T}},n;min=1)where T
+  c=res[end]
+  res[end]=pushcopy!(c,n)
+  for i in min:n-min
+    push!(res,pushcopy!(c,i))
+    addcompositions(res,n-i;min)
+  end
+end
+
+function compositions(n::T,k;min=1)where T<:Integer
+  if k*min>n return Vector{T}[] end
+  if min<0 error("min must be ≥0") end
+  res=[T[]]
+  addcompositions(res,n,k;min)
+  res
+end
+
+function addcompositions(res::Vector{Vector{T}},n,k;min=1)where T
+  c=res[end]
+  if k==1 push!(c,n); return end
+  start=true
+  for i in min:n-(k-1)*min
+    if start res[end]=pushcopy!(c,i);start=false
+    else push!(res,pushcopy!(c,i))
+    end
+    addcompositions(res,n-i,k-1;min)
+  end
 end
 
 ncompositions(n)=n==0 ? 1 : 2^(n-1)
@@ -1610,15 +1641,7 @@ function robinson_schensted(p::AbstractVector{<:Integer})
 end
 
 #----------------------- Number theory ---------------------------
-import Primes
-const dict_factor=Dict(2=>Primes.factor(2))
-"""
-`factor(n::Integer)`
-
-make `Primes.factor` fast for integers <300 by memoizing it
-"""
-factor(n::Integer)=if n<300 get!(()->Primes.factor(n),dict_factor,n)
-                   else Primes.factor(n) end
+using Primes: Primes, eachfactor
 
 """
 `prime_residues(n)` the numbers less than `n` and prime to `n`
@@ -1631,7 +1654,7 @@ julia> [prime_residues(24)]
 function prime_residues(n)
   if n==1 return [0] end
   pp=trues(n) # use a sieve to go fast
-  for p in keys(factor(n))
+  for (p,np) in Primes.eachfactor(n)
     pp[p:p:n].=false
   end
   (1:n)[pp]
@@ -1647,7 +1670,7 @@ julia> [divisors(24)]
 """
 function divisors(n::Integer)::Vector{Int}
   if n==1 return [1] end
-  sort(vec(map(prod,Iterators.product((p.^(0:m) for (p,m) in factor(n))...))))
+  sort(vec(map(prod,Iterators.product((p.^(0:m) for (p,m) in Primes.eachfactor(n))...))))
 end
 
 """
@@ -1667,14 +1690,14 @@ function primitiveroot(m::Integer)
   if m==2 return 1
   elseif m==4 return 3
   end
-  f=factor(m)
+  f=Primes.factor(m)
   nf=length(keys(f))
   if nf>2 return nothing end
   if nf>1 && (!(2 in keys(f)) || f[2]>1) return nothing end
   if nf==1 && (2 in keys(f)) && f[2]>2 return nothing end
   p=Primes.totient(m) # the Euler φ
   1+findfirst(x->powermod(x,p,m)==1 && 
-            all(d->powermod(x,div(p,d),m)!=1,keys(factor(p))),2:m-1)
+     all(d->powermod(x,div(p,d),m)!=1,keys(Primes.factor(p))),2:m-1)
 end
 
 const bern=Rational{BigInt}[-1//2]
