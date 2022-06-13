@@ -369,9 +369,7 @@ end
 
 
 """
-`combinations(mset[,k];dict=false)`
-
-`ncombinations(mset[,k];dict=false)`
+`combinations(mset[,k];dict=false)`,  `ncombinations(mset[,k];dict=false)`
 
 `combinations`   returns  all  combinations  of   the  multiset  `mset`  (a
 collection  or  iterable  with  possible  repetitions). If a second integer
@@ -434,9 +432,7 @@ end
 
 #--------------------- arrangements -------------------
 """
-`arrangements(mset[,k])`
-
-`narrangements(mset[,k])`
+`arrangements(mset[,k])`, `narrangements(mset[,k])`
 
 `arrangements`  returns  the  arrangements  of  the  multiset `mset` (a not
 necessarily  sorted  collection  with  possible  repetitions).  If a second
@@ -655,9 +651,7 @@ function Base.iterate(s::PartitionsK,v)
   end
 end
 """
-`partitions(n::Integer[,k])`
-
-`npartitions(n::Integer[,k])`
+`partitions(n::Integer[,k])`, `npartitions(n::Integer[,k])`
 
 `partitions`  returns in lexicographic order the partitions (with `k` parts
 if  `k`  is  given)  of  the  positive  integer `n` . `npartitions` returns
@@ -739,9 +733,7 @@ function npartitions(n,k)
 end
 
 """
-`partitions(n::Integer,set::AbstractVector[,k])`   
-    
-`npartitions(n::Integer,set::AbstractVector[,k])`   
+`partitions(n::Integer,set::AbstractVector[,k])`, `npartitions(n::Integer,set::AbstractVector[,k])`   
 
 returns  the list  of partitions  of `n`  (with `k`  parts if `k` is given)
 restricted  to have parts in `set`. `npartitions` gives (faster) the number
@@ -852,9 +844,7 @@ function npartitions(n::Integer,set::AbstractVector,m,k,part,i)
 end
 
 """
-`partitions(set::AbstractVector[,k])`
-
-`npartitions(set::AbstractVector[,k])`
+`partitions(set::AbstractVector[,k])`, `npartitions(set::AbstractVector[,k])`
 
 the  set of all unordered  partitions (in `k` sets  if `k` is given) of the
 set  `set` (a  collection without  repetitions). `npartitions`  returns the
@@ -1072,9 +1062,7 @@ end
 # bad implementation but which is ordered as GAP3; needed for
 # compatibility with Chevie data library (specially type B2)
 """
-`partition_tuples(n,r)`
-
-`npartition_tuples(n,r)`
+`partition_tuples(n,r)`, `npartition_tuples(n,r)`
 
 the `r`-tuples of partitions that together partition `n`.
 `npartition_tuples` is the number of partition tuples.
@@ -1143,45 +1131,47 @@ function npartition_tuples(n,k)
 end
 
 """
-`compositions(n[,k];min=1)`
-
-`ncompositions(n[,k])`
+`compositions(n[,k];min=1)`, `ncompositions(n[,k];min=1)`
 
 This  function returns the compositions of  `n` (the compositions of length
 `k`  if a second argument `k` is given), where a composition of the integer
 `n`  is a decomposition `n=p₁+…+pₖ` in  integers `≥min`, represented as the
-vector  `[p₁,…,pₖ]`. Unless  `k` is  given, `min`  must be  `>0`. There are
+vector  `[p₁,…,pₖ]`. Unless `k` is given,  `min` must be `>0`. Compositions
+are sometimes called ordered partitions.
+
+`ncompositions`  returns  (faster)  the  number  of compositions. There are
 ``2^{n-1}``  compositions of `n` in  integers `≥1`, and `binomial(n-1,k-1)`
-compositions  of `n` in  `k` parts `≥1`.  Compositions are sometimes called
-ordered   partitions.  `ncompositions`  returns   (faster)  the  number  of
-compositions but is implemented only in the case `min=1`.
+compositions of `n` in `k` parts `≥1`.
 
 ```julia-repl
 julia> ncompositions(4)
 8
 
 julia> compositions(4)
-8-element Vector{Vector{Int64}}:
+8-element Vector{SubArray{Int64, 1, Matrix{Int64}, Tuple{Int64, Base.Slice{Base.OneTo{Int64}}}, true}}:
  [4]
  [1, 3]
- [1, 1, 2]
- [1, 1, 1, 1]
- [1, 2, 1]
  [2, 2]
- [2, 1, 1]
  [3, 1]
+ [1, 1, 2]
+ [1, 2, 1]
+ [2, 1, 1]
+ [1, 1, 1, 1]
 
 julia> ncompositions(4,2)
 3
 
 julia> compositions(4,2)
-3-element Vector{Vector{Int64}}:
+3-element Vector{SubArray{Int64, 1, Matrix{Int64}, Tuple{Int64, Base.Slice{Base.OneTo{Int64}}}, true}}:
  [1, 3]
  [2, 2]
  [3, 1]
 
+julia> ncompositions(4,2;min=0)
+5
+
 julia> compositions(4,2;min=0)
-5-element Vector{Vector{Int64}}:
+5-element Vector{SubArray{Int64, 1, Matrix{Int64}, Tuple{Int64, Base.Slice{Base.OneTo{Int64}}}, true}}:
  [0, 4]
  [1, 3]
  [2, 2]
@@ -1189,57 +1179,37 @@ julia> compositions(4,2;min=0)
  [4, 0]
 ```
 """
-function compositions(n::T;min=1)where T<:Integer
-  if min>n return Vector{T}[] end
+function compositions(n::T;min=1) where T<:Integer
   if min<=0 error("min must be ≥1") end
-  res=[T[]]
-  addcompositions(res,n;min)
-  res
+  if min>n return Vector{T}[] end
+  vcat((compositions(n,k;min) for k in 1:div(n,min))...)
 end
 
-function pushcopy!(v,i) # faster than push!(copy(v),i)
-  res=copyto!(similar(v,length(v)+1),v)
-  res[end]=i
-  res
-end
-
-function addcompositions(res::Vector{Vector{T}},n;min=1)where T
-  c=res[end]
-  res[end]=pushcopy!(c,n)
-  for i in min:n-min
-    push!(res,pushcopy!(c,i))
-    addcompositions(res,n-i;min)
-  end
-end
-
-function compositions(n::T,k;min=1)where T<:Integer
+function compositions(n::T,k::Integer;min=1)where T<:Integer
   if k*min>n return Vector{T}[] end
   if min<0 error("min must be ≥0") end
-  res=[T[]]
-  addcompositions(res,n,k;min)
-  res
+  res=fill(zero(T),ncompositions(n,k;min),k)
+  addcompositions(res,n,k-1,1;min)
+  collect(eachrow(res))
 end
 
-function addcompositions(res::Vector{Vector{T}},n,k;min=1)where T
-  c=res[end]
-  if k==1 push!(c,n); return end
-  start=true
-  for i in min:n-(k-1)*min
-    if start res[end]=pushcopy!(c,i);start=false
-    else push!(res,pushcopy!(c,i))
-    end
-    addcompositions(res,n-i,k-1;min)
+function addcompositions(res::Matrix{T},n,k,j;min=1)where T
+  if k==0 res[j,end]=n; return j end
+  for i in min:n-k*min
+    if i!=min j+=1; @views res[j,:].=res[j-1,:] end
+    res[j,end-k]=i;
+    j=addcompositions(res,n-i,k-1,j;min)
   end
+  j
 end
 
-ncompositions(n)=n==0 ? 1 : 2^(n-1)
+ncompositions(n;min=1)=min==1 ? (n==0 ? 1 : 2^(n-1)) : 
+  sum(k->ncompositions(n,k;min),1:div(n,min))
 
-ncompositions(n,k)=binomial(n-1,k-1)
+ncompositions(n,k;min=1)=n+k<1+k*min ? 0 : binomial(n-1-k*(min-1),k-1)
 
 """
-`multisets(set,k)`
-
-`nmultisets(set,k)`
+`multisets(set,k)`, `nmultisets(set,k)`
 
 `multisets`  returns  the  set  of  all  multisets of length `k` made of
 elements   of   the   set   `set`   (a   collection  without  repetitions).
@@ -1323,6 +1293,12 @@ function msetdiff(a,b)
       end
     end
   end
+  res
+end
+
+function pushcopy!(v,i) # faster than push!(copy(v),i)
+  res=copyto!(similar(v,length(v)+1),v)
+  res[end]=i
   res
 end
 
@@ -1641,7 +1617,13 @@ function robinson_schensted(p::AbstractVector{<:Integer})
 end
 
 #----------------------- Number theory ---------------------------
-using Primes: Primes, eachfactor
+using Primes: Primes
+
+if isdefined(Primes,:eachfactor)
+  EF=Primes.eachfactor
+else
+  EF=Primes.factor
+end
 
 """
 `prime_residues(n)` the numbers less than `n` and prime to `n`
@@ -1654,7 +1636,7 @@ julia> [prime_residues(24)]
 function prime_residues(n)
   if n==1 return [0] end
   pp=trues(n) # use a sieve to go fast
-  for (p,np) in Primes.eachfactor(n)
+  for (p,np) in EF(n)
     pp[p:p:n].=false
   end
   (1:n)[pp]
@@ -1670,7 +1652,7 @@ julia> [divisors(24)]
 """
 function divisors(n::Integer)::Vector{Int}
   if n==1 return [1] end
-  sort(vec(map(prod,Iterators.product((p.^(0:m) for (p,m) in Primes.eachfactor(n))...))))
+  sort(vec(map(prod,Iterators.product((p.^(0:m) for (p,m) in EF(n))...))))
 end
 
 """
