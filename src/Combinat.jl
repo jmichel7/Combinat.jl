@@ -245,7 +245,7 @@ function allequal(a) # written so that a can be an iterator
 end
 end
 
-" faster than unique! for sorted vectors"
+"`unique_sorted!(v::Vector)` faster than unique! for sorted `v`"
 function unique_sorted!(v::Vector)
   i=1
 @inbounds  for j in 2:length(v)
@@ -1617,13 +1617,7 @@ function robinson_schensted(p::AbstractVector{<:Integer})
 end
 
 #----------------------- Number theory ---------------------------
-using Primes: Primes
-
-if isdefined(Primes,:eachfactor)
-  EF=Primes.eachfactor
-else
-  EF=Primes.factor
-end
+using Primes: eachfactor, factor, totient
 
 """
 `prime_residues(n)` the numbers less than `n` and prime to `n`
@@ -1636,7 +1630,7 @@ julia> [prime_residues(24)]
 function prime_residues(n)
   if n==1 return [0] end
   pp=trues(n) # use a sieve to go fast
-  for (p,np) in EF(n)
+  for (p,np) in eachfactor(n)
     pp[p:p:n].=false
   end
   (1:n)[pp]
@@ -1652,7 +1646,7 @@ julia> [divisors(24)]
 """
 function divisors(n::Integer)::Vector{Int}
   if n==1 return [1] end
-  sort(vec(map(prod,Iterators.product((p.^(0:m) for (p,m) in EF(n))...))))
+  sort(vec(map(prod,Iterators.product((p.^(0:m) for (p,m) in eachfactor(n))...))))
 end
 
 """
@@ -1672,14 +1666,14 @@ function primitiveroot(m::Integer)
   if m==2 return 1
   elseif m==4 return 3
   end
-  f=Primes.factor(m)
+  f=factor(m)
   nf=length(keys(f))
   if nf>2 return nothing end
   if nf>1 && (!(2 in keys(f)) || f[2]>1) return nothing end
   if nf==1 && (2 in keys(f)) && f[2]>2 return nothing end
-  p=Primes.totient(m) # the Euler φ
+  p=totient(m) # the Euler φ
   1+findfirst(x->powermod(x,p,m)==1 && 
-     all(d->powermod(x,div(p,d),m)!=1,keys(Primes.factor(p))),2:m-1)
+     all(d->powermod(x,div(p,d),m)!=1,keys(factor(p))),2:m-1)
 end
 
 const bern=Rational{BigInt}[-1//2]
