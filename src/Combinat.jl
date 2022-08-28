@@ -60,8 +60,8 @@ both packages could be made more compatible.
 """
 module Combinat
 export combinations, ncombinations, arrangements, narrangements,
-  partitions, npartitions, partition_tuples, 
-  npartition_tuples, compositions, ncompositions, multisets, nmultisets, 
+  partitions, npartitions, partition_tuples, npartition_tuples, 
+  compositions, ncompositions, multisets, nmultisets, 
   lcm_partitions, gcd_partitions, conjugate_partition, dominates, tableaux,
     robinson_schensted,
   bell, stirling1, stirling2, catalan, bernoulli,
@@ -377,7 +377,7 @@ argument  `k` is given, it returns  the combinations with `k` elements. `k`
 may  also be a vector  of integers, then it  returns the combinations whose
 number of elements is one of these integers.
 
-`ncombinations` returns the number of combinations.
+`ncombinations` returns (faster) the number of combinations.
 
 A  *combination* is an unordered subsequence.
 
@@ -427,17 +427,38 @@ function ncombinations2(mul,k)
   if k==0 return 1 end
   if isempty(mul) return 0 end
   if mul[1]==1 return binomial(length(mul),k) end
-  sum(i->ncombinations2((@view mul[2:end]),k-i),0:min(mul[1],k))
+  res=0
+  for i in 0:min(mul[1],k)
+    res+=ncombinations2((@view mul[2:end]),k-i)
+  end
+  res
+# sum(i->ncombinations2((@view mul[2:end]),k-i),0:min(mul[1],k)) # allocates
 end
 
 #--------------------- arrangements -------------------
+function arr(l,combs,blist,mset,k)local i,start
+  if l==k return end
+  start=true
+  for i in eachindex(blist)
+    if blist[i] && (i==length(blist) || !blist[i+1] || mset[i+1]!=mset[i])
+      if start start=false
+      else push!(combs,copy(combs[end]))
+      end
+      combs[end][l+1]=mset[i]
+      blist[i]=false
+      arr(l+1,combs,blist,mset,k)
+      blist[i]=true
+    end
+  end
+end
+
 """
 `arrangements(mset[,k])`, `narrangements(mset[,k])`
 
 `arrangements`  returns  the  arrangements  of  the  multiset `mset` (a not
 necessarily  sorted  collection  with  possible  repetitions).  If a second
 argument   `k`  is  given,  it  returns  arrangements  with  `k`  elements.
-`narrangements` returns the number of arrangements.
+`narrangements` returns (faster) the number of arrangements.
 
 An  *arrangement*  of  `mset`  is  a  subsequence taken in arbitrary order,
 representated as a `Vector`. It is also called a permutation.
@@ -447,13 +468,13 @@ Suppose  you have the six  characters of the word  'settle' and you have to
 make a four letter word. Then the possibilities are given by
 
 ```julia-repl
-julia> narrangements(collect("settle"),4)
+julia> narrangements("settle",4)
 102
 ```
 while all possible words (including the empty one) are:
 
 ```julia-repl
-julia> narrangements(collect("settle"))
+julia> narrangements("settle")
 523
 ```
 The  result returned  by 'arrangements'  is sorted  (the elements of `mset`
@@ -462,7 +483,7 @@ listed  in the same  order as they  appear in the  dictionary. Here are the
 two-letter words:
 
 ```julia-repl
-julia> String.(arrangements(collect("settle"),2))
+julia> String.(arrangements("settle",2))
 14-element Vector{String}:
  "ee"
  "el"
@@ -485,79 +506,37 @@ function arrangements(mset,k)
   blist=trues(length(mset))
   if k>length(mset) return Vector{eltype(mset)}[] end
   combs=[mset[1:k]]
-  function arr(k,l)local i,start
-    if iszero(k) return end
-    start=true
-    for i in eachindex(blist)
-      if blist[i] && (i==length(blist) || mset[i+1]!=mset[i] || !blist[i+1])
-        blist[i]=false
-        if !start push!(combs,copy(combs[end])) end
-        start=false
-        combs[end][l+1]=mset[i]
-        arr(k-1,l+1)
-        blist[i]=true
-      end
-    end
-  end
-  arr(k,0)
+  arr(0,combs,blist,mset,k)
   combs
 end
 
 arrangements(mset)=vcat(arrangements.(Ref(mset),0:length(mset))...)
 
-function NrArrangementsA( mset, m, n, i )
-  if i==n+1 return 1 end
-  combs=1
-  for l in 1:n
-    if m[l] && (l==1 || m[l-1]==false || mset[l]!=mset[l-1])
-      m[l]=false
-      combs+=NrArrangementsA(mset,m,n,i+1)
-      m[l]=true
-    end
+function narr(tt::Vector{Int},k::Int,j::Int)
+  if k<=0 return 1 end
+  if k>sum(@view(tt[j:end])) return 0 end
+  res=0
+  for i in 0:tt[j]
+    res+=binomial(k,i)*narr(tt,k-i,j+1)
   end
-  combs
+  res
+# sum(i->binomial(k,i)*narr(tt,k-i,j+1),0:tt[j]) allocates a lot!
 end
-
-function NrArrangementsK( mset, m, n, k )
-  if k==0 return 1 end
-  combs=0
-  for l in 1:n
-    if m[l] && (l==1 || m[l-1]==false || mset[l]!=mset[l-1])
-      m[l]=false
-      combs+=NrArrangementsK(mset,m,n,k-1)
-      m[l]=true
-    end
-  end
-  combs
-end 
 
 @doc (@doc arrangements) narrangements
-function narrangements(mset)
-  mset=sort!(copy(mset))
-  if allunique(mset)
-    nr=0
-    for i in 0:length(mset)
-      nr+=prod(length(mset):-1:length(mset)-i+1)
-    end
-  else
-    m=trues(length(mset))
-    nr=NrArrangementsA(mset,m,length(mset),1)
+function narrangements(mset,k)
+  tt=last.(tally(mset))
+  if all(==(1),tt) prod(length(mset):-1:length(mset)-k+1)
+  else narr(tt,k,1)
   end
 end
 
-function narrangements(mset,k)
-  mset=sort!(copy(mset))
-  if allunique(mset)
-    if k <= length(mset)
-      nr=prod(length(mset):-1:length(mset)-k+1)
-    else
-      nr=0
-    end
-  else
-    m=trues(length(mset))
-    nr=NrArrangementsK(mset,m,length(mset),k)
+function narrangements(mset)
+  tt=last.(tally(mset))
+  n=length(mset)
+  if all(==(1),tt) sum(i->prod(n:-1:n-i+1),0:n)
+  else sum(k->narr(tt,k,1),0:n)
   end
-  nr
 end
 
 #--------------------- partitions -------------------
@@ -650,6 +629,7 @@ function Base.iterate(s::PartitionsK,v)
     end
   end
 end
+
 """
 `partitions(n::Integer[,k])`, `npartitions(n::Integer[,k])`
 
