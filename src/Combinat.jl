@@ -6,34 +6,57 @@ The list of functions it exports are:
 
 Classical enumerations:
 
-`combinations, arrangements, partitions, partition_tuples,
- compositions, multisets`
+[`combinations`](@ref),
+[`arrangements`](@ref),
+[`partitions`](@ref),
+[`partition_tuples`](@ref),
+[`compositions`](@ref),
+[`multisets`](@ref)
 
 functions to count them without computing them:
 
-`ncombinations, narrangements, npartitions, npartition_tuples, 
- ncompositions, nmultisets`
+`ncombinations`,
+`narrangements`,
+`npartitions`,
+`npartition_tuples`,
+`ncompositions`,
+`nmultisets`
 
 some functions on partitions and permutations:
 
-`lcm_partitions, gcd_partitions, conjugate_partition, dominates, tableaux,
- robinson_schensted`
+[`lcm_partitions`](@ref),
+[`gcd_partitions`](@ref),
+[`conjugate_partition`](@ref),
+[`dominates`](@ref),
+[`tableaux`](@ref),
+[`robinson_schensted`](@ref)
 
 counting functions:
 
-`bell, stirling1, stirling2, catalan, bernoulli`
+[`bell`](@ref),
+[`stirling1`](@ref),
+[`stirling2`](@ref),
+[`catalan`](@ref),
+[`bernoulli`](@ref)
 
 number theory
 
-`divisors, prime_residues, primitiveroot`
+[`divisors`](@ref),
+[`prime_residues`](@ref),
+[`primitiveroot`](@ref)
 
 some structural manipulations not yet in Julia:
 
-`groupby, tally, tally_sorted, collectby, unique_sorted!`
+[`groupby`](@ref),
+[`tally`](@ref),
+[`tally_sorted`](@ref),
+[`collectby`](@ref),
+[`unique_sorted!`](@ref)
 
 matrix blocks:
 
-`blocks, diagblocks`
+[`blocks`](@ref),
+[`diagblocks`](@ref)
 
 Have  a  look  at  the  individual  docstrings  and  enjoy (any feedback is
 welcome).  
@@ -890,7 +913,7 @@ the  *Stirling  numbers  of  the  first  kind*  `S₁(n,k)`  are  defined  by
 `S₁(n,k)`  is the  number of  permutations of  `n` points  with `k` cycles.
 They   are   also   given   by   the   generating  function  ``n!{x\\choose
 n}=\\sum_{k=0}^n(S₁(n,k) x^k)``. Note the similarity to ``x^n=\\sum_{k=0}^n
-S₂(n,k)k!{x\\choosek}``  (see  `stirling2`).  Also  the  definition of `S₁`
+S₂(n,k)k!{x\\choose k}`` (see  `stirling2`).  Also  the  definition of `S₁`
 implies  `S₁(n,k)=S₂(-k,-n)` if  `n,k<0`. There  are many formulae relating
 Stirling  numbers of the first kind to Stirling numbers of the second kind,
 Bell numbers, and Binomial numbers.
