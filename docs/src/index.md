@@ -8,6 +8,7 @@ Combinat
 combinations
 Combinat.Combinations
 arrangements
+permutations
 partitions
 Combinat.Partitions
 partition_tuples

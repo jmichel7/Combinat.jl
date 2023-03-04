@@ -8,6 +8,7 @@ Classical enumerations:
 
 [`combinations`](@ref),
 [`arrangements`](@ref),
+[`permutations`](@ref),
 [`partitions`](@ref),
 [`partition_tuples`](@ref),
 [`compositions`](@ref),
@@ -82,7 +83,7 @@ would  welcome discussions  with the  authors of  `Combinatorics` to see if
 both packages could be made more compatible.
 """
 module Combinat
-export combinations, ncombinations, arrangements, narrangements,
+export combinations, ncombinations, arrangements, narrangements, permutations,
   partitions, npartitions, partition_tuples, npartition_tuples, 
   compositions, ncompositions, multisets, nmultisets, 
   lcm_partitions, gcd_partitions, conjugate_partition, dominates, tableaux,
@@ -561,7 +562,57 @@ function narrangements(mset)
   else sum(k->narr(tt,k,1),0:n)
   end
 end
+#--------------------- permutations -------------------
+"""
+`permutations(n)`
 
+returns  in lexicographic order the permutations of `1:n`. This is a faster
+version  of  `arrangements(1:n,n)`.  `permutations`  is  implemented  by an
+iterator  `Combinat.Permutations`  which  can  be  used  to  enumerate  the
+permutations of a large number.
+
+```julia-repl
+julia> permutations(3)
+6-element Vector{Any}:
+ [1, 2, 3]
+ [1, 3, 2]
+ [2, 1, 3]
+ [2, 3, 1]
+ [3, 1, 2]
+ [3, 2, 1]
+
+julia> sum(first(p) for p in Combinat.Permutations(5))
+360
+```
+"""
+permutations(n)=collect(Permutations(n))
+
+struct Permutations
+  n::Int
+end
+
+Base.length(p::Permutations)=factorial(p.n)
+
+function Base.iterate(P::Permutations)
+  u=collect(1:P.n)
+  (u,u)
+end
+
+function Base.iterate(P::Permutations,p)
+  n=P.n
+  p=copy(p)
+  i=n-1;while i>0 && p[i]>p[i+1] i-=1 end
+  if iszero(i) return end
+  j=n;while p[i]>p[j] j-=1 end
+  p[i],p[j]=p[j],p[i]
+  i+=1
+  j=n
+  while i<j
+    p[i],p[j]=p[j],p[i]
+    i+=1;j-=1
+  end
+  (p,p)
+end
 #--------------------- partitions -------------------
 """
 `Combinat.Partitions(n[,k])` is an iterator which enumerates the partitions
