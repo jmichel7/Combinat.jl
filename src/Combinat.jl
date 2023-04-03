@@ -1727,7 +1727,7 @@ function primitiveroot(m::Integer)
   if nf==1 && (2 in keys(f)) && f[2]>2 return nothing end
   p=totient(m) # the Euler φ
   1+findfirst(x->powermod(x,p,m)==1 && 
-     all(d->powermod(x,div(p,d),m)!=1,keys(factor(p))),2:m-1)
+     all(d->powermod(x,div(p,d),m)!=1,keys(factor(p))),2:m-1)::Int
 end
 
 const bern=Rational{BigInt}[-1//2]
