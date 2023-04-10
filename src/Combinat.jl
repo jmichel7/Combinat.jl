@@ -89,7 +89,7 @@ export combinations, ncombinations, arrangements, narrangements, permutations,
   lcm_partitions, gcd_partitions, conjugate_partition, dominates, tableaux,
     robinson_schensted,
   bell, stirling1, stirling2, catalan, bernoulli,
-  groupby, tally, tally_sorted, collectby, unique_sorted!,
+  groupby, tally, tally_sorted, collectby, unique_sorted!, intersect_sorted,
   blocks, diagblocks,
   divisors, prime_residues, primitiveroot
 
@@ -279,6 +279,30 @@ function unique_sorted!(v::Vector)
     end
   end
   resize!(v,i)
+end
+
+"""
+`intersect_sorted(a,b)` 
+
+intersects  `a` and `b` assumed to be  both sorted (and their elements have
+an  `isless` method). This is many  times faster than `intersect`.
+"""
+function intersect_sorted(a,b)
+  res=promote_type(eltype(a),eltype(b))[]
+  sa=iterate(a)
+  sb=iterate(b)
+  while sa!==nothing && sb!==nothing
+    ai,stata=sa
+    bi,statb=sb
+    if isless(ai,bi) sa=iterate(a,stata)
+    elseif ai==bi 
+      if isempty(res)||ai!=res[end] push!(res,ai) end
+      sa=iterate(a,stata)
+      sb=iterate(b,statb)
+    else   sb=iterate(b,statb)
+    end
+  end
+  res
 end
 
 #--------------------- combinations -------------------
@@ -484,16 +508,17 @@ necessarily  sorted  collection  with  possible  repetitions).  If a second
 argument   `k`  is  given,  it  returns  arrangements  with  `k`  elements.
 `narrangements` returns (faster) the number of arrangements.
 
-An  *arrangement*  of  `mset`  is  a  subsequence taken in arbitrary order,
-representated as a `Vector`. It is also called a permutation.
+An *arrangement* of `mset` with `k` elements is a subsequence of length `k`
+taken in arbitrary order, representated as a `Vector`. When
+`k==length(mset)` it is also called a permutation.
 
 As  an example of arrangements  of a multiset, think  of the game Scrabble.
 Suppose  you have the six  characters of the word  'settle' and you have to
-make a four letter word. Then the possibilities are given by
+make a two letter word. Then the possibilities are given by
 
 ```julia-repl
-julia> narrangements("settle",4)
-102
+julia> narrangements("settle",2)
+14
 ```
 while all possible words (including the empty one) are:
 

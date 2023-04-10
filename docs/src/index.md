@@ -29,6 +29,7 @@ tally
 tally_sorted
 collectby
 unique_sorted!
+intersect_sorted
 diagblocks
 blocks(m::AbstractMatrix)
 bernoulli
