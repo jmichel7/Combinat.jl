@@ -42,7 +42,6 @@ counting functions:
 
 number theory
 
-[`divisors`](@ref),
 [`prime_residues`](@ref),
 [`primitiveroot`](@ref)
 
@@ -90,8 +89,7 @@ export combinations, ncombinations, arrangements, narrangements, permutations,
     robinson_schensted,
   bell, stirling1, stirling2, catalan, bernoulli,
   groupby, tally, tally_sorted, collectby, unique_sorted!, intersect_sorted,
-  blocks, diagblocks,
-  divisors, prime_residues, primitiveroot
+  blocks, diagblocks, prime_residues, primitiveroot
 
 #--------------------- Structural manipulations -------------------
 """
@@ -561,31 +559,27 @@ end
 
 arrangements(mset)=vcat(arrangements.(Ref(mset),0:length(mset))...)
 
-function narr(tt::Vector{Int},k::Int,j::Int)
+# narrangements from the decreasing list of multiplicities tt
+function narr(tt,k::Int)::Union{Int,BigInt}
   if k<=0 return 1 end
-  if k>sum(@view(tt[j:end])) return 0 end
-  res=0
-  for i in 0:tt[j]
-    res+=binomial(k,i)*narr(tt,k-i,j+1)
+  n=sum(tt)
+  if n>20 n=big(n) end
+  if k>n 0 
+  elseif k==n div(factorial(n),prod(factorial(i) for i in tt))
+  elseif all(==(1),tt) prod(n-k+1:n)
+  else sum(binomial(k,i)*narr(Iterators.drop(tt,1),k-i) for i in 0:first(tt))
   end
-  res
-# sum(i->binomial(k,i)*narr(tt,k-i,j+1),0:tt[j]) allocates a lot!
 end
 
 @doc (@doc arrangements) narrangements
 function narrangements(mset,k)
-  tt=last.(tally(mset))
-  if all(==(1),tt) prod(length(mset):-1:length(mset)-k+1)
-  else narr(tt,k,1)
-  end
+  tt=sort!(last.(tally(mset)),rev=true)
+  narr(tt,Int(k))
 end
-
+  
 function narrangements(mset)
-  tt=last.(tally(mset))
-  n=length(mset)
-  if all(==(1),tt) sum(i->prod(n:-1:n-i+1),0:n)
-  else sum(k->narr(tt,k,1),0:n)
-  end
+  tt=sort!(last.(tally(mset)),rev=true)
+  sum(narr(tt,k) for k in 0:length(mset))
 end
 #--------------------- permutations -------------------
 """
@@ -1713,19 +1707,6 @@ function prime_residues(n)
     pp[p:p:n].=false
   end
   (1:n)[pp]
-end
-
-"""
-`divisors(n)` the increasing list of divisors of `n`.
-```julia-repl
-julia> [divisors(24)]
-1-element Vector{Vector{Int64}}:
- [1, 2, 3, 4, 6, 8, 12, 24]
-```
-"""
-function divisors(n::Integer)::Vector{Int}
-  if n==1 return [1] end
-  sort(vec(map(prod,Iterators.product((p.^(0:m) for (p,m) in eachfactor(n))...))))
 end
 
 """

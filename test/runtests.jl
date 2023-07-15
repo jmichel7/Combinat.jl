@@ -1,21 +1,20 @@
 # auto-generated tests from julia-repl docstrings
 using Test, Combinat
-function mytest(f::String,a::String,b::String)
-  println(f," ",a)
-  omit=a[end]==';'
-  a=replace(a,"\\\\"=>"\\")
-  a=repr(MIME("text/plain"),eval(Meta.parse(a)),context=:limit=>true)
-  if omit a="nothing" end
-  a=replace(a,r" *(\n|$)"s=>s"\1")
-  a=replace(a,r"\n$"s=>"")
-  b=replace(b,r" *(\n|$)"s=>s"\1")
-  b=replace(b,r"\n$"s=>"")
-  i=1
-  while i<=lastindex(a) && i<=lastindex(b) && a[i]==b[i]
-    i=nextind(a,i)
+function mytest(file::String,cmd::String,man::String)
+  println(file," ",cmd)
+  exec=repr(MIME("text/plain"),eval(Meta.parse(cmd)),context=:limit=>true)
+  if endswith(cmd,";") exec="nothing" 
+  else exec=replace(exec,r"\s*$"m=>"")
+       exec=replace(exec,r"\s*$"s=>"")
   end
-  if a!=b print("exec=$(repr(a[i:end]))\nmanl=$(repr(b[i:end]))\n") end
-  a==b
+  if exec!=man 
+    i=1
+    while i<=lastindex(exec) && i<=lastindex(man) && exec[i]==man[i]
+      i=nextind(exec,i)
+    end
+    print("exec=$(repr(exec[i:end]))\nmanl=$(repr(man[i:end]))\n")
+  end
+  exec==man
 end
 @testset verbose = true "Gapjm" begin
 @testset "Combinat.jl" begin
@@ -30,9 +29,11 @@ end
 @test mytest("Combinat.jl","collect(a)","10-element Vector{Vector{Int64}}:\n [1, 2, 2]\n [1, 2, 3]\n [1, 2, 4]\n [1, 3, 4]\n [1, 4, 4]\n [2, 2, 3]\n [2, 2, 4]\n [2, 3, 4]\n [2, 4, 4]\n [3, 4, 4]")
 @test mytest("Combinat.jl","ncombinations([1,2,2,3])","12")
 @test mytest("Combinat.jl","combinations([1,2,2,3])","12-element Vector{Vector{Int64}}:\n []\n [1]\n [2]\n [3]\n [1, 2]\n [1, 3]\n [2, 2]\n [2, 3]\n [1, 2, 2]\n [1, 2, 3]\n [2, 2, 3]\n [1, 2, 2, 3]")
-@test mytest("Combinat.jl","narrangements(collect(\"settle\"),4)","102")
-@test mytest("Combinat.jl","narrangements(collect(\"settle\"))","523")
-@test mytest("Combinat.jl","String.(arrangements(collect(\"settle\"),2))","14-element Vector{String}:\n \"ee\"\n \"el\"\n \"es\"\n \"et\"\n \"le\"\n \"ls\"\n \"lt\"\n \"se\"\n \"sl\"\n \"st\"\n \"te\"\n \"tl\"\n \"ts\"\n \"tt\"")
+@test mytest("Combinat.jl","narrangements(\"settle\",2)","14")
+@test mytest("Combinat.jl","narrangements(\"settle\")","523")
+@test mytest("Combinat.jl","String.(arrangements(\"settle\",2))","14-element Vector{String}:\n \"ee\"\n \"el\"\n \"es\"\n \"et\"\n \"le\"\n \"ls\"\n \"lt\"\n \"se\"\n \"sl\"\n \"st\"\n \"te\"\n \"tl\"\n \"ts\"\n \"tt\"")
+@test mytest("Combinat.jl","permutations(3)","6-element Vector{Any}:\n [1, 2, 3]\n [1, 3, 2]\n [2, 1, 3]\n [2, 3, 1]\n [3, 1, 2]\n [3, 2, 1]")
+@test mytest("Combinat.jl","sum(first(p) for p in Combinat.Permutations(5))","360")
 @test mytest("Combinat.jl","a=Combinat.Partitions(5)","Partitions(5)")
 @test mytest("Combinat.jl","collect(a)","7-element Vector{Vector{Int64}}:\n [1, 1, 1, 1, 1]\n [2, 1, 1, 1]\n [2, 2, 1]\n [3, 1, 1]\n [3, 2]\n [4, 1]\n [5]")
 @test mytest("Combinat.jl","a=Combinat.Partitions(10,3)","Partitions(10,3)")
@@ -64,6 +65,7 @@ end
 @test mytest("Combinat.jl","compositions(4)","8-element Vector{SubArray{Int64, 1, Matrix{Int64}, Tuple{Int64, Base.Slice{Base.OneTo{Int64}}}, true}}:\n [4]\n [1, 3]\n [2, 2]\n [3, 1]\n [1, 1, 2]\n [1, 2, 1]\n [2, 1, 1]\n [1, 1, 1, 1]")
 @test mytest("Combinat.jl","ncompositions(4,2)","3")
 @test mytest("Combinat.jl","compositions(4,2)","3-element Vector{SubArray{Int64, 1, Matrix{Int64}, Tuple{Int64, Base.Slice{Base.OneTo{Int64}}}, true}}:\n [1, 3]\n [2, 2]\n [3, 1]")
+@test mytest("Combinat.jl","ncompositions(4,2;min=0)","5")
 @test mytest("Combinat.jl","compositions(4,2;min=0)","5-element Vector{SubArray{Int64, 1, Matrix{Int64}, Tuple{Int64, Base.Slice{Base.OneTo{Int64}}}, true}}:\n [0, 4]\n [1, 3]\n [2, 2]\n [3, 1]\n [4, 0]")
 @test mytest("Combinat.jl","multisets(1:4,3)","20-element Vector{Vector{Int64}}:\n [1, 1, 1]\n [1, 1, 2]\n [1, 1, 3]\n [1, 1, 4]\n [1, 2, 2]\n [1, 2, 3]\n [1, 2, 4]\n [1, 3, 3]\n [1, 3, 4]\n [1, 4, 4]\n [2, 2, 2]\n [2, 2, 3]\n [2, 2, 4]\n [2, 3, 3]\n [2, 3, 4]\n [2, 4, 4]\n [3, 3, 3]\n [3, 3, 4]\n [3, 4, 4]\n [4, 4, 4]")
 @test mytest("Combinat.jl","lcm_partitions([[1,2],[3,4],[5,6]],[[1],[2,5],[3],[4],[6]])","2-element Vector{Vector{Int64}}:\n [1, 2, 5, 6]\n [3, 4]")
@@ -83,7 +85,6 @@ end
 @test mytest("Combinat.jl","tableaux([2,2])","2-element Vector{Vector{Vector{Int64}}}:\n [[1, 2], [3, 4]]\n [[1, 3], [2, 4]]")
 @test mytest("Combinat.jl","robinson_schensted([2,3,4,1])","([[1, 3, 4], [2]], [[1, 2, 3], [4]])")
 @test mytest("Combinat.jl","[prime_residues(24)]","1-element Vector{Vector{Int64}}:\n [1, 5, 7, 11, 13, 17, 19, 23]")
-@test mytest("Combinat.jl","[divisors(24)]","1-element Vector{Vector{Int64}}:\n [1, 2, 3, 4, 6, 8, 12, 24]")
 @test mytest("Combinat.jl","primitiveroot(23)","5")
 end
 end

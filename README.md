@@ -34,7 +34,7 @@ counting functions:
 
 number theory
 
-[`divisors`](index.md#Combinat.divisors), [`prime_residues`](index.md#Combinat.prime_residues), [`primitiveroot`](index.md#Combinat.primitiveroot)
+[`prime_residues`](index.md#Combinat.prime_residues), [`primitiveroot`](index.md#Combinat.primitiveroot)
 
 some structural manipulations not yet in Julia:
 
@@ -1025,22 +1025,4 @@ julia> primitiveroot(23)
 5
 ```
 
-
 <a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/0ccb35b88449e3fa2e6d38e667c3b3b0ff8fef1e/src/Combinat.jl#L1731-L1743' class='documenter-source'>source</a><br>
-
-<a id='Combinat.divisors' href='#Combinat.divisors'>#</a>
-**`Combinat.divisors`** &mdash; *Function*.
-
-
-
-`divisors(n)` the increasing list of divisors of `n`.
-
-```julia-repl
-julia> [divisors(24)]
-1-element Vector{Vector{Int64}}:
- [1, 2, 3, 4, 6, 8, 12, 24]
-```
-
-
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/0ccb35b88449e3fa2e6d38e667c3b3b0ff8fef1e/src/Combinat.jl#L1718-L1725' class='documenter-source'>source</a><br>
-

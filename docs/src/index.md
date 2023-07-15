@@ -35,5 +35,4 @@ blocks(m::AbstractMatrix)
 bernoulli
 prime_residues
 primitiveroot
-divisors
 ```

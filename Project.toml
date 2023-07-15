@@ -1,13 +1,13 @@
 name = "Combinat"
 uuid = "a6b051d1-fc4b-4ede-b53e-347fa9fb9a74"
 authors = ["Jean Michel <jean.michel@imj-prg.fr>"]
-version = "0.0.4"
+version = "0.0.5"
 
 [deps]
 Primes = "27ebfcd6-29c5-5fa9-bf4b-fb8fc14df3ae"
 
 [compat]
-Primes = "0.5.3, 0.6"
+Primes = "0.5.4, 0.6"
 julia = "1"
 
 [extras]
