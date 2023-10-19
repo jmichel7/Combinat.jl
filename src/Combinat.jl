@@ -256,17 +256,6 @@ function collectby(f,v)
   res
 end
 
-if VERSION<=v"1.7.5"
-export allequal
-
-" `allequal(a)` whether all elements in iterable `a` are equal"
-function allequal(a) # written so that a can be an iterator
-  if isempty(a) return true end
-  o=first(a)
-  all(==(o),a)
-end
-end
-
 "`unique_sorted!(v::Vector)` faster than unique! for sorted `v`"
 function unique_sorted!(v::Vector)
   i=1
