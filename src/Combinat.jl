@@ -366,7 +366,7 @@ Base.eltype(x::Combinations{T}) where T=Vector{T}
 Base.IteratorSize(::Type{Combinations{T}}) where T=Base.SizeUnknown()
 Base.show(io::IO,x::Combinations)=print(io,"Combinations(",vcat(fill.(x.s,x.m)...),",",x.k,")")
 
-function Base.iterate(S::Combinations,v)
+@inline function Base.iterate(S::Combinations,v)
   i=length(v)
   t=S.m
   k=S.k
@@ -606,7 +606,7 @@ function Base.iterate(P::Permutations)
   (u,u)
 end
 
-function Base.iterate(P::Permutations,p)
+@inline function Base.iterate(P::Permutations,p)
   n=P.n
   p=copy(p)
   i=n-1;while i>0 && p[i]>p[i+1] i-=1 end
@@ -667,7 +667,7 @@ function Base.iterate(s::Partitions{T})where T
   copy(v),v
 end
 
-function Base.iterate(s::Partitions,v)
+@inline function Base.iterate(s::Partitions,v)
   ss=0
   for i in length(v):-1:1
     if ss>0 && (i==1 || v[i]<v[i-1])
@@ -698,7 +698,7 @@ function Base.iterate(s::PartitionsK)
   copy(v),v
 end
 
-function Base.iterate(s::PartitionsK,v)
+@inline function Base.iterate(s::PartitionsK,v)
   ss=0
   for i in s.k:-1:1
     if ss>s.k-i && (i==1 || v[i]<v[i-1])
