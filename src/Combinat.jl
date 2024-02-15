@@ -52,6 +52,8 @@ some structural manipulations not yet in Julia:
 [`tally_sorted`](@ref),
 [`collectby`](@ref),
 [`unique_sorted!`](@ref)
+[`union_sorted`](@ref)
+[`intersect_sorted`](@ref)
 
 matrix blocks:
 
@@ -89,7 +91,7 @@ export combinations, ncombinations, arrangements, narrangements, permutations,
     robinson_schensted,
   bell, stirling1, stirling2, catalan, bernoulli,
   groupby, tally, tally_sorted, collectby, unique_sorted!, intersect_sorted,
-  blocks, diagblocks, prime_residues, primitiveroot
+  union_sorted, blocks, diagblocks, prime_residues, primitiveroot
 
 #--------------------- Structural manipulations -------------------
 """
@@ -165,16 +167,6 @@ function tally_sorted(v)
   res
 end
 
-function tally_dict(v)
-  res=Dict{eltype(v),Int}()
-  for n in v 
-    if haskey(res,n) res[n]+=1
-    else res[n]=1
-    end
-  end
-  collect(res)
-end
-
 """
 `tally(v;dict=false)`
 
@@ -197,7 +189,14 @@ julia> tally("a tally test")
 ```
 """
 function tally(v::AbstractArray;dict=false)
-  if dict tally_dict(v)
+  if dict
+    res=Dict{eltype(v),Int}()
+    for n in v 
+      if haskey(res,n) res[n]+=1
+      else res[n]=1
+      end
+    end
+    collect(res)
   else tally_sorted(issorted(v) ? v : sort(v))
   end
 end
@@ -275,6 +274,7 @@ intersects  `a` and `b` assumed to be  both sorted (and their elements have
 an  `isless` method). This is many  times faster than `intersect`.
 """
 function intersect_sorted(a,b)
+  if !issorted(a) || !issorted(b) error("arguments should be sorted") end
   res=promote_type(eltype(a),eltype(b))[]
   sa=iterate(a)
   sb=iterate(b)
@@ -290,6 +290,34 @@ function intersect_sorted(a,b)
     end
   end
   res
+end
+
+"""
+`union_sorted(a,b)` 
+
+computes  the union of  `a` and `b`  assumed to be  both sorted and without
+repetitions  (and their  elements have  an `isless`  method). The result is
+sorted, so may differ from `union`; this is many times faster than `union`.
+"""
+function union_sorted(a,b)
+  if !issorted(a) || !issorted(b) error("arguments should be sorted") end
+  la=length(a)
+  lb=length(b)
+  res=empty(a)
+  res=similar(a,la+lb)
+  ai=bi=1
+  ri=0
+@inbounds while ai<=la || bi<=lb
+  if     ai>la res[ri+=1]=b[bi]; bi+=1
+  elseif bi>lb res[ri+=1]=a[ai]; ai+=1
+    else c=cmp(a[ai],b[bi])
+      if     c>0 res[ri+=1]=b[bi]; bi+=1
+      elseif c<0 res[ri+=1]=a[ai]; ai+=1
+      else res[ri+=1]=a[ai]; ai+=1; bi+=1
+      end
+    end
+  end
+  resize!(res,ri)
 end
 
 #--------------------- combinations -------------------
