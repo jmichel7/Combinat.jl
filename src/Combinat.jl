@@ -1792,7 +1792,11 @@ const bern=Rational{BigInt}[-1//2]
 `Bₙ`    is    defined    by   ``B₀=1,   B_n=-\\sum_{k=0}^{n-1}({n+1\\choose
 k}B_k)/(n+1)``.  `Bₙ/n!` is the coefficient of  `xⁿ` in the power series of
 `x/(eˣ-1)`.  Except for `B₁=-1/2` the Bernoulli numbers for odd indices are
-zero. ```julia_repl julia> bernoulli(4) -1//30
+zero.
+
+```julia-repl 
+julia> bernoulli(4)
+-1//30
 
 julia> bernoulli(10)
 5//66
