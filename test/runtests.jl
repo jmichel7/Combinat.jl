@@ -6,15 +6,15 @@ function mytest(file::String,cmd::String,man::String)
   if endswith(cmd,";") exec="nothing" 
   else exec=replace(exec,r"\s*$"m=>"")
        exec=replace(exec,r"\s*$"s=>"")
+       exec=replace(exec,r"^\s*"=>"")
   end
-  if exec!=man 
-    i=1
-    while i<=lastindex(exec) && i<=lastindex(man) && exec[i]==man[i]
-      i=nextind(exec,i)
-    end
-    print("exec=$(repr(exec[i:end]))\nmanl=$(repr(man[i:end]))\n")
+  if exec==man return true end
+  i=1
+  while i<=lastindex(exec) && i<=lastindex(man) && exec[i]==man[i]
+    i=nextind(exec,i)
   end
-  exec==man
+  print("exec=$(repr(exec[i:end]))\nmanl=$(repr(man[i:end]))\n")
+  return false
 end
 @testset verbose = true "Gapjm" begin
 @testset "Combinat.jl" begin
@@ -74,7 +74,7 @@ end
 @test mytest("Combinat.jl","catalan(big(50))","1978261657756160653623774456")
 @test mytest("Combinat.jl","m=[0 0 0 1;0 0 1 0;0 1 0 0;1 0 0 0]","4×4 Matrix{Int64}:\n 0  0  0  1\n 0  0  1  0\n 0  1  0  0\n 1  0  0  0")
 @test mytest("Combinat.jl","diagblocks(m)","2-element Vector{Vector{Int64}}:\n [1, 4]\n [2, 3]")
-@test mytest("Combinat.jl","m[[1,4],[1,4]]","2×2 Matrix{Int64}:\n 0  1\n 1  0")
+@test mytest("Combinat.jl","m[[1,4,2,3],[1,4,2,3]]","4×4 Matrix{Int64}:\n 0  1  0  0\n 1  0  0  0\n 0  0  0  1\n 0  0  1  0")
 @test mytest("Combinat.jl","m=[1 0 0 0;0 1 0 0;1 0 1 0;0 0 0 1;0 0 1 0]","5×4 Matrix{Int64}:\n 1  0  0  0\n 0  1  0  0\n 1  0  1  0\n 0  0  0  1\n 0  0  1  0")
 @test mytest("Combinat.jl","blocks(m)","3-element Vector{Tuple{Vector{Int64}, Vector{Int64}}}:\n ([1, 3, 5], [1, 3])\n ([2], [2])\n ([4], [4])")
 @test mytest("Combinat.jl","m[[1,3,5,2,4],[1,3,2,4]]","5×4 Matrix{Int64}:\n 1  0  0  0\n 1  1  0  0\n 0  1  0  0\n 0  0  1  0\n 0  0  0  1")
@@ -86,5 +86,6 @@ end
 @test mytest("Combinat.jl","robinson_schensted([2,3,4,1])","([[1, 3, 4], [2]], [[1, 2, 3], [4]])")
 @test mytest("Combinat.jl","[prime_residues(24)]","1-element Vector{Vector{Int64}}:\n [1, 5, 7, 11, 13, 17, 19, 23]")
 @test mytest("Combinat.jl","primitiveroot(23)","5")
+@test mytest("Combinat.jl","moebius.(1:6)","6-element Vector{Int64}:\n  1\n -1\n -1\n  0\n -1\n  1")
 end
 end

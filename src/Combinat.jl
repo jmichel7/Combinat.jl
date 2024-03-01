@@ -1,6 +1,7 @@
 """
-This  module is  a Julia  port of  some GAP  combinatorics and basic number
-theory. The only dependency is the package `Primes`.
+This  module  started  as  a  Julia  port of combinatorics and basic number
+theory  functions  from  GAP.  See  comments  below  on  how it compares to
+`Combinatorics.jl`. The only dependency is the `Primes` package.
 
 The list of functions it exports are:
 
@@ -14,7 +15,7 @@ Classical enumerations:
 [`compositions`](@ref),
 [`multisets`](@ref)
 
-functions to count them without computing them:
+functions to count enumerations without computing them:
 
 `ncombinations`,
 `narrangements`,
@@ -44,8 +45,9 @@ number theory
 
 [`prime_residues`](@ref),
 [`primitiveroot`](@ref)
+[`moebius`](@ref)
 
-some structural manipulations not yet in Julia:
+some structural manipulations not (yet?) in Julia:
 
 [`groupby`](@ref),
 [`tally`](@ref),
@@ -63,25 +65,29 @@ matrix blocks:
 Have  a  look  at  the  individual  docstrings  and  enjoy (any feedback is
 welcome).  
 
-After   writing  most  of  this  module  I  became  aware  of  the  package
+After  writing  most  of  this  module,  I  became  aware  of  the  package
 `Combinatorics`  which has a  considerable overlap. However  there are some
-fundamental   disagreements   between   these   two  packages  which  makes
-`Combinatorics` not easily usable for me:
+discrepancies  between these  two packages  which make  `Combinatorics` not
+easily usable for me:
 
-  -  often I  use sorting  in algorithms  when `Combinatorics`  use hashing.
-    Thus  the algorithms cannot be applied to the same objects (and sorting
-    is  often  faster).  I  provide  optionally  a  hashing variant of some
-    algorithms.
+  - I often  use sorting  in algorithms  where `Combinatorics` uses hashing.
+    So  the algorithms do  not always apply  to the same  types (sorting is
+    often faster). For some algorithms, a keyword lets you choose a hashing
+    variant.  Here hashable refers to a type  which has a `hash` method and
+    sortable to a type which has an `isless` method.
 
-  - `Combinatorics.combinations` does not include the empty set.
+  - `Combinatorics.combinations` does not include the empty subset.
 
-  -  I use lower case for functions and Camel case for structs (Iterators).
-    `Combinatorics`  does not have functions for classical enumerations but
-    only (lowercase) iterators.
+  - I use lower  case for functions  that return enumerations  as a list and
+    camel  case  for  iterators.  Many  enumerations  have  both  variants.
+    `Combinatorics` has only one variant for enumerations, which is often a
+    lowercase iterator.
 
-Some  less fundamental  disagreements is  disagreement on  names. However I
-would  welcome discussions  with the  authors of  `Combinatorics` to see if
-both packages could be made more compatible.
+  - `Combinatorics` has fewer enumerations.
+
+A  less  fundamental  discrepancy  concerns  names. However I would welcome
+discussions  with the authors of `Combinatorics` to see if the two packages
+could be made more compatible in this respect.
 """
 module Combinat
 export combinations, ncombinations, arrangements, narrangements, permutations,
@@ -91,7 +97,7 @@ export combinations, ncombinations, arrangements, narrangements, permutations,
     robinson_schensted,
   bell, stirling1, stirling2, catalan, bernoulli,
   groupby, tally, tally_sorted, collectby, unique_sorted!, intersect_sorted,
-  union_sorted, blocks, diagblocks, prime_residues, primitiveroot
+  union_sorted, blocks, diagblocks, prime_residues, primitiveroot, moebius
 
 #--------------------- Structural manipulations -------------------
 """
@@ -140,41 +146,13 @@ function groupby(f::Function,l)
 end
 
 """
-`tally_sorted(v)`
-
-`tally_sorted`  is like `tally`  but works only  for a sorted iterable. The
-point is that it is *very* fast.
-"""
-function tally_sorted(v)
-  res=Pair{eltype(v),Int}[]
-  fp=iterate(v)
-  if isnothing(fp) return res end
-  prev,state=fp
-  c=1
-  while true
-    fp=iterate(v,state)
-    if isnothing(fp)
-      push!(res,prev=>c)
-      return res
-    end
-    n,state=fp
-    if n==prev c+=1
-    else push!(res,prev=>c)
-      prev=n
-      c=1
-    end
-  end
-  res
-end
-
-"""
 `tally(v;dict=false)`
 
 counts how many times each element of collection or iterable `v` occurs and
-returns a sorted `Vector` of `elt=>count` (a variation on
+returns a sorted `Vector` of `elt=>count` (a variant of
 StatsBase.countmap).  By default the  elements of `v`  must be sortable; if
 they  are not but hashable, giving the keyword `dict=true` uses a `Dict` to
-build (slightly slower) a non sorted result.
+build (much slower) an unsorted result.
 
 ```julia-repl
 julia> tally("a tally test")
@@ -204,6 +182,34 @@ end
 tally(v::AbstractRange;k...)=v.=>1
 
 tally(v;k...)=tally(collect(v);k...) # for iterables
+
+"""
+`tally_sorted(v)`
+
+`tally_sorted`  is like `tally`  but works only  for a sorted iterable. The
+point is that it is *very* fast.
+"""
+function tally_sorted(v)
+  res=Pair{eltype(v),Int}[]
+  fp=iterate(v)
+  if isnothing(fp) return res end
+  prev,state=fp
+  c=1
+  while true
+    fp=iterate(v,state)
+    if isnothing(fp)
+      push!(res,prev=>c)
+      return res
+    end
+    n,state=fp
+    if n==prev c+=1
+    else push!(res,prev=>c)
+      prev=n
+      c=1
+    end
+  end
+  res
+end
 
 """
 `collectby(f,v)`
@@ -270,8 +276,9 @@ end
 """
 `intersect_sorted(a,b)` 
 
-intersects  `a` and `b` assumed to be  both sorted (and their elements have
-an  `isless` method). This is many  times faster than `intersect`.
+intersects   `a`  and   `b`  assumed   to  be   both  sorted   and  without
+repetitions(and  their elements sortable).  This is many  times faster than
+`intersect`.
 """
 function intersect_sorted(a,b)
   if !issorted(a) || !issorted(b) error("arguments should be sorted") end
@@ -296,8 +303,8 @@ end
 `union_sorted(a,b)` 
 
 computes  the union of  `a` and `b`  assumed to be  both sorted and without
-repetitions  (and their  elements have  an `isless`  method). The result is
-sorted, so may differ from `union`; this is many times faster than `union`.
+repetitions  (and their  elements sortable).  The result  is sorted, so may
+differ from `union`; this function is many times faster than `union`.
 """
 function union_sorted(a,b)
   if !issorted(a) || !issorted(b) error("arguments should be sorted") end
@@ -325,9 +332,9 @@ end
 """
 `Combinat.Combinations(s[,k])`   is  an   iterator  which   enumerates  the
 combinations  of  the  multiset  `s`  (with  `k`  elements  if `k`given) in
-lexicographic  order. The elements of `s` must be sortable. If they are not
-but  hashable giving  the keyword  `dict=true` will  give an iterator for a
-non-sorted result.
+lexicographic order. The elements of `s` must be sortable. If they are not,
+but  hashable, giving the  keyword `dict=true` will  give an iterator on an
+unsorted result.
 ```julia-repl
 julia> a=Combinat.Combinations(1:4);
 
@@ -652,7 +659,7 @@ end
 #--------------------- partitions -------------------
 """
 `Combinat.Partitions(n[,k])` is an iterator which enumerates the partitions
-of `n` (with `k`part if `k`given) in lexicographic order.
+of `n` (with `k` parts if `k`given) in lexicographic order.
 ```julia-repl
 julia> a=Combinat.Partitions(5)
 Partitions(5)
@@ -969,7 +976,7 @@ julia> partitions(1:4,2)
  [[1], [2, 3, 4]]
 ```
 Note  that `unique(sort.(partitions(mset[,k])))`  is a  version which works
-for a multiset `mset`. There is currently no ordered counterpart.
+for a multiset `mset`.
 """
 function partitions(set::AbstractVector,k)
   res=Vector{Vector{eltype(set)}}[]
@@ -1490,10 +1497,12 @@ julia> diagblocks(m)
  [1, 4]
  [2, 3]
 
-julia> m[[1,4],[1,4]]
-2×2 Matrix{Int64}:
- 0  1
- 1  0
+julia> m[[1,4,2,3],[1,4,2,3]]
+4×4 Matrix{Int64}:
+ 0  1  0  0
+ 1  0  0  0
+ 0  0  0  1
+ 0  0  1  0
 ```
 """
 function diagblocks(M::AbstractMatrix)::Vector{Vector{Int}}
@@ -1628,9 +1637,9 @@ end
 `tableaux(S)`
 
 if  `S`  is  a  partition  tuple,  returns  the  list  of standard tableaux
-associated  to the partition tuple `S`, that is a filling of the associated
-young  diagrams  with  the  numbers  `1:sum(sum,S)`  such  that the numbers
-increase across the rows and down the columns.
+associated  with  the  partition  tuple  `S`,  that  is  a  filling  of the
+associated  young diagrams  with the  numbers `1:sum(sum,S)`  such that the
+numbers increase across the rows and down the columns.
 
 If  `S` is a single partition, the standard tableaux for that partition are
 returned.
@@ -1672,8 +1681,8 @@ tableaux(S::Vector{<:Integer})=first.(tableaux([S]))
 """
 `robinson_schensted(p::AbstractVector{<:Integer})`
 
-returns  the pair of standard tableaux associated to the permutation `p` by
-the Robinson-Schensted correspondence.
+returns  the pair of standard tableaux  associated with the permutation `p`
+by the Robinson-Schensted correspondence.
 
 ```julia-repl
 julia> robinson_schensted([2,3,4,1])
@@ -1710,7 +1719,7 @@ end
 using Primes: eachfactor, factor, totient
 
 """
-`prime_residues(n)` the numbers less than `n` and prime to `n`
+`prime_residues(n)` the numbers in `1:n` prime to `n`
 ```julia-repl
 julia> [prime_residues(24)]
 1-element Vector{Vector{Int64}}:
@@ -1727,11 +1736,11 @@ function prime_residues(n)
 end
 
 """
-`primitiveroot(m::Integer)`  a primitive root `mod.  m`, that is generating
-multiplicatively  `prime_residues(m)`, or nothing if  there is no primitive
-root `mod. m`.
+`primitiveroot(m::Integer)`   a   primitive   root,   that   is  generating
+multiplicatively  `mod.  m`  the  `prime_residues(m)`. The function returns
+`nothing` if there is no primitive root `mod. m`.
 
-A  primitive root exists if `m` is of the form `4`, `2p^a` or `p^a` for `p`
+A  primitive root exists if `m` is of the form `4`, `p^a` or `2p^a` for `p`
 prime>2.
 
 ```julia-repl
@@ -1753,18 +1762,37 @@ function primitiveroot(m::Integer)
      all(d->powermod(x,div(p,d),m)!=1,keys(factor(p))),2:m-1)::Int
 end
 
+"""
+`moebius(n::Integer)`
+
+The  classical  Möbius  function  is  the  Möbius  function of the poset of
+integers for divisibility. It is zero outside square-free integers, and for
+square-free integers is `(-1)ⁿ' where n is the number of prime factors.
+```julia-repl
+julia> moebius.(1:6)
+6-element Vector{Int64}:
+  1
+ -1
+ -1
+  0
+ -1
+  1
+```
+"""
+function moebius(n::Integer)
+  m(p,e)=p==0 ? 0 : e==1 ? -1 : 0
+  reduce(*, m(p, e) for (p, e) in eachfactor(n) if p ≥ 0; init=1)
+end
+
 const bern=Rational{BigInt}[-1//2]
 
 """
 `bernoulli(n)` the `n`-th *Bernoulli number*  `Bₙ` as a `Rational{BigInt}`
 
-`Bₙ` is defined by ``B₀=1, B_n=-\\sum_{k=0}^{n-1}((n+1\\choose k)B_k)/(n+1)``.
-`Bₙ/n!` is the coefficient of  `xⁿ` in the power series of  `x/(eˣ-1)`.
-Except for `B₁=-1/2`  the Bernoulli numbers for odd indices are zero.
-    
-```julia_repl
-julia> bernoulli(4)
--1//30
+`Bₙ`    is    defined    by   ``B₀=1,   B_n=-\\sum_{k=0}^{n-1}({n+1\\choose
+k}B_k)/(n+1)``.  `Bₙ/n!` is the coefficient of  `xⁿ` in the power series of
+`x/(eˣ-1)`.  Except for `B₁=-1/2` the Bernoulli numbers for odd indices are
+zero. ```julia_repl julia> bernoulli(4) -1//30
 
 julia> bernoulli(10)
 5//66
