@@ -1662,14 +1662,14 @@ julia> tableaux([2,2])
  [[1, 3], [2, 4]]
 ```
 """
-function tableaux(S)
-  if isempty(S) return S end
+tableaux(S)=inner_tableaux(copy.(S))
+function inner_tableaux(S)
   w=sum(sum,S)
   if iszero(w) return [map(x->map(y->Int[],x),S)] end
   res=Vector{Vector{Vector{Int}}}[]
   for i in eachindex(S), p in eachindex(S[i])
     if iszero(S[i][p]) || (p<length(S[i]) && S[i][p+1]==S[i][p]) continue end
-    S[i][p]-=1; tt=tableaux(S); S[i][p]+=1
+    S[i][p]-=1; tt=inner_tableaux(S); S[i][p]+=1
     for t in tt push!(t[i][p], w) end
     append!(res,tt)
   end
