@@ -244,7 +244,7 @@ julia> collectby("JFMAMJJASOND",l)
  [:Nov]
  [:Oct]
  [:Sep]
-```julia-repl
+```
 
 """
 function collectby(f,v)
@@ -265,10 +265,7 @@ end
 function unique_sorted!(v::Vector)
   i=1
 @inbounds  for j in 2:length(v)
-    if v[j]<v[i] error("not sorted:",v)
-    elseif v[j]==v[i]
-    else i+=1; v[i]=v[j]
-    end
+    if v[j]!=v[i] i+=1; v[i]=v[j] end
   end
   resize!(v,i)
 end
@@ -437,7 +434,6 @@ function Combinations(mset,ll::AbstractVector=0:length(mset);kw...)
   Iterators.flatten(Combinations(t,k,s) for k in ll)
 end
 
-
 """
 `combinations(mset[,k];dict=false)`,  `ncombinations(mset[,k];dict=false)`
 
@@ -479,8 +475,9 @@ julia> combinations([1,2,2,3])
  [2, 2, 3]
  [1, 2, 2, 3]
 ```
-The  combinations  are  implemented  by an iterator `Combinat.Combinations`
-which can enumerate the combinations of a large multiset.
+The combinations are implemented by an iterator
+[`Combinations`](@ref)  which can enumerate  the combinations of a
+large multiset.
 """
 combinations(x...;kw...)=collect(Combinations(x...;kw...))
 
@@ -1121,7 +1118,7 @@ julia> bell(14)
 
 julia> bell(big(30))
 846749014511809332450147
-```julia-repl
+```
 """
 function bell(n)
   bell_=[one(n)]
@@ -1227,6 +1224,38 @@ function npartition_tuples(n,k)
   res
 end
 
+struct Compositions{T<:Integer}
+  n::T
+  k::Int
+  min::T
+end
+
+Compositions(n,k;min=1)=Compositions(n,k,min)
+
+Base.eltype(::Type{Compositions{T}}) where T=Vector{T}
+
+function Base.length(c::Compositions)
+  t=c.n+c.k-1-c.k*c.min
+  t<0 ? 0 : binomial(t,c.k-1)
+end
+
+function Base.iterate(c::Compositions)
+  s=c.n-c.k*c.min 
+  if s<0 return nothing end
+  u=fill(c.min,c.k);u[end]=s+c.min
+  u,copy(u)
+end
+
+@inline function Base.iterate(c::Compositions,u)
+  for i in length(u):-1:2
+    s=sum(@view u[i:end])-1-(length(u)-i)*c.min
+    if s>=c.min 
+      u[i-1]+=1;u[end]=s;u[i:end-1].=c.min
+      return u,copy(u)
+    end
+  end
+end
+
 """
 `compositions(n[,k];min=1)`, `ncompositions(n[,k];min=1)`
 
@@ -1245,7 +1274,7 @@ julia> ncompositions(4)
 8
 
 julia> compositions(4)
-8-element Vector{SubArray{Int64, 1, Matrix{Int64}, Tuple{Int64, Base.Slice{Base.OneTo{Int64}}}, true}}:
+8-element Vector{Vector{Int64}}:
  [4]
  [1, 3]
  [2, 2]
@@ -1259,7 +1288,7 @@ julia> ncompositions(4,2)
 3
 
 julia> compositions(4,2)
-3-element Vector{SubArray{Int64, 1, Matrix{Int64}, Tuple{Int64, Base.Slice{Base.OneTo{Int64}}}, true}}:
+3-element Vector{Vector{Int64}}:
  [1, 3]
  [2, 2]
  [3, 1]
@@ -1268,42 +1297,32 @@ julia> ncompositions(4,2;min=0)
 5
 
 julia> compositions(4,2;min=0)
-5-element Vector{SubArray{Int64, 1, Matrix{Int64}, Tuple{Int64, Base.Slice{Base.OneTo{Int64}}}, true}}:
+5-element Vector{Vector{Int64}}:
  [0, 4]
  [1, 3]
  [2, 2]
  [3, 1]
  [4, 0]
 ```
+The compositions are implemented by an iterator `Combinat.Compositions` which
+can be used to enumerate the compositions of a large number.
 """
+compositions(n::T,k::Integer;min=1)where T<:Integer=collect(Compositions(n,k;min))
+
+ncompositions(n,k;min=1)=length(Compositions(n,k;min))
+
+ncompositions(n;min=1)=min==1 ? (n==0 ? 1 : 2^(n-1)) : 
+  sum(k->ncompositions(n,k;min),1:div(n,min))
+
 function compositions(n::T;min=1) where T<:Integer
   if min<=0 error("min must be ≥1") end
   if min>n return Vector{T}[] end
   vcat((compositions(n,k;min) for k in 1:div(n,min))...)
 end
 
-function compositions(n::T,k::Integer;min=1)where T<:Integer
-  if k*min>n return Vector{T}[] end
-  if min<0 error("min must be ≥0") end
-  res=fill(zero(T),ncompositions(n,k;min),k)
-  addcompositions(res,n,k-1,1;min)
-  collect(eachrow(res))
-end
+Compositions(n::T;min=1) where T<:Integer=(c for k in 1:div(n,min) for c in Compositions(n,k;min))
 
-function addcompositions(res::Matrix{T},n,k,j;min=1)where T
-  if k==0 res[j,end]=n; return j end
-  for i in min:n-k*min
-    if i!=min j+=1; @views res[j,:].=res[j-1,:] end
-    res[j,end-k]=i;
-    j=addcompositions(res,n-i,k-1,j;min)
-  end
-  j
-end
-
-ncompositions(n;min=1)=min==1 ? (n==0 ? 1 : 2^(n-1)) : 
-  sum(k->ncompositions(n,k;min),1:div(n,min))
-
-ncompositions(n,k;min=1)=n+k<1+k*min ? 0 : binomial(n-1-k*(min-1),k-1)
+@doc (@doc compositions) ncompositions
 
 """
 `multisets(set,k)`, `nmultisets(set,k)`

@@ -3,20 +3,14 @@ using Test, Combinat
 function mytest(file::String,cmd::String,man::String)
   println(file," ",cmd)
   exec=repr(MIME("text/plain"),eval(Meta.parse(cmd)),context=:limit=>true)
-  if endswith(cmd,";") exec="nothing" 
-  else exec=replace(exec,r"\s*$"m=>"")
-       exec=replace(exec,r"\s*$"s=>"")
-       exec=replace(exec,r"^\s*"=>"")
-  end
+  if endswith(cmd,";") return true end
+  exec=replace(exec,r"\s*$"m=>""); exec=replace(exec,r"\s*$"s=>"")
+  exec=replace(exec,r"^\s*"=>"")
   if exec==man return true end
-  i=1
-  while i<=lastindex(exec) && i<=lastindex(man) && exec[i]==man[i]
-    i=nextind(exec,i)
-  end
+  i=findfirst(i->i<=lastindex(man) && exec[i]!=man[i],collect(eachindex(exec)))
   print("exec=$(repr(exec[i:end]))\nmanl=$(repr(man[i:end]))\n")
-  return false
+  false
 end
-@testset verbose = true "Gapjm" begin
 @testset "Combinat.jl" begin
 @test mytest("Combinat.jl","groupby(iseven,1:10)","Dict{Bool, Vector{Int64}} with 2 entries:\n  0 => [1, 3, 5, 7, 9]\n  1 => [2, 4, 6, 8, 10]")
 @test mytest("Combinat.jl","tally(\"a tally test\")","7-element Vector{Pair{Char, Int64}}:\n ' ' => 2\n 'a' => 2\n 'e' => 1\n 'l' => 2\n 's' => 1\n 't' => 3\n 'y' => 1")
@@ -62,11 +56,11 @@ end
 @test mytest("Combinat.jl","npartition_tuples(3,2)","10")
 @test mytest("Combinat.jl","partition_tuples(3,2)","10-element Vector{Vector{Vector{Int64}}}:\n [[1, 1, 1], []]\n [[1, 1], [1]]\n [[1], [1, 1]]\n [[], [1, 1, 1]]\n [[2, 1], []]\n [[1], [2]]\n [[2], [1]]\n [[], [2, 1]]\n [[3], []]\n [[], [3]]")
 @test mytest("Combinat.jl","ncompositions(4)","8")
-@test mytest("Combinat.jl","compositions(4)","8-element Vector{SubArray{Int64, 1, Matrix{Int64}, Tuple{Int64, Base.Slice{Base.OneTo{Int64}}}, true}}:\n [4]\n [1, 3]\n [2, 2]\n [3, 1]\n [1, 1, 2]\n [1, 2, 1]\n [2, 1, 1]\n [1, 1, 1, 1]")
+@test mytest("Combinat.jl","compositions(4)","8-element Vector{Vector{Int64}}:\n [4]\n [1, 3]\n [2, 2]\n [3, 1]\n [1, 1, 2]\n [1, 2, 1]\n [2, 1, 1]\n [1, 1, 1, 1]")
 @test mytest("Combinat.jl","ncompositions(4,2)","3")
-@test mytest("Combinat.jl","compositions(4,2)","3-element Vector{SubArray{Int64, 1, Matrix{Int64}, Tuple{Int64, Base.Slice{Base.OneTo{Int64}}}, true}}:\n [1, 3]\n [2, 2]\n [3, 1]")
+@test mytest("Combinat.jl","compositions(4,2)","3-element Vector{Vector{Int64}}:\n [1, 3]\n [2, 2]\n [3, 1]")
 @test mytest("Combinat.jl","ncompositions(4,2;min=0)","5")
-@test mytest("Combinat.jl","compositions(4,2;min=0)","5-element Vector{SubArray{Int64, 1, Matrix{Int64}, Tuple{Int64, Base.Slice{Base.OneTo{Int64}}}, true}}:\n [0, 4]\n [1, 3]\n [2, 2]\n [3, 1]\n [4, 0]")
+@test mytest("Combinat.jl","compositions(4,2;min=0)","5-element Vector{Vector{Int64}}:\n [0, 4]\n [1, 3]\n [2, 2]\n [3, 1]\n [4, 0]")
 @test mytest("Combinat.jl","multisets(1:4,3)","20-element Vector{Vector{Int64}}:\n [1, 1, 1]\n [1, 1, 2]\n [1, 1, 3]\n [1, 1, 4]\n [1, 2, 2]\n [1, 2, 3]\n [1, 2, 4]\n [1, 3, 3]\n [1, 3, 4]\n [1, 4, 4]\n [2, 2, 2]\n [2, 2, 3]\n [2, 2, 4]\n [2, 3, 3]\n [2, 3, 4]\n [2, 4, 4]\n [3, 3, 3]\n [3, 3, 4]\n [3, 4, 4]\n [4, 4, 4]")
 @test mytest("Combinat.jl","lcm_partitions([[1,2],[3,4],[5,6]],[[1],[2,5],[3],[4],[6]])","2-element Vector{Vector{Int64}}:\n [1, 2, 5, 6]\n [3, 4]")
 @test mytest("Combinat.jl","gcd_partitions([[1,2],[3,4],[5,6]],[[1],[2,5],[3],[4],[6]])","6-element Vector{Vector{Int64}}:\n [1]\n [2]\n [3]\n [4]\n [5]\n [6]")
@@ -87,5 +81,4 @@ end
 @test mytest("Combinat.jl","[prime_residues(24)]","1-element Vector{Vector{Int64}}:\n [1, 5, 7, 11, 13, 17, 19, 23]")
 @test mytest("Combinat.jl","primitiveroot(23)","5")
 @test mytest("Combinat.jl","moebius.(1:6)","6-element Vector{Int64}:\n  1\n -1\n -1\n  0\n -1\n  1")
-end
 end
