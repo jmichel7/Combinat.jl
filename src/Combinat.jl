@@ -613,7 +613,7 @@ permutations of a large number.
 
 ```julia-repl
 julia> permutations(3)
-6-element Vector{Any}:
+6-element Vector{Vector{Int64}}:
  [1, 2, 3]
  [1, 3, 2]
  [2, 1, 3]
@@ -632,6 +632,7 @@ struct Permutations
 end
 
 Base.length(p::Permutations)=factorial(p.n)
+Base.eltype(::Type{Permutations})=Vector{Int}
 
 function Base.iterate(P::Permutations)
   u=collect(1:P.n)
@@ -1256,6 +1257,8 @@ end
   end
 end
 
+Compositions(n::T;min=1) where T<:Integer=(c for k in 1:div(n,min) for c in Compositions(n,k;min))
+
 """
 `compositions(n[,k];min=1)`, `ncompositions(n[,k];min=1)`
 
@@ -1309,18 +1312,12 @@ can be used to enumerate the compositions of a large number.
 """
 compositions(n::T,k::Integer;min=1)where T<:Integer=collect(Compositions(n,k;min))
 
+compositions(n::T;min=1) where T<:Integer=collect(Compositions(n;min))
+
 ncompositions(n,k;min=1)=length(Compositions(n,k;min))
 
 ncompositions(n;min=1)=min==1 ? (n==0 ? 1 : 2^(n-1)) : 
   sum(k->ncompositions(n,k;min),1:div(n,min))
-
-function compositions(n::T;min=1) where T<:Integer
-  if min<=0 error("min must be ≥1") end
-  if min>n return Vector{T}[] end
-  vcat((compositions(n,k;min) for k in 1:div(n,min))...)
-end
-
-Compositions(n::T;min=1) where T<:Integer=(c for k in 1:div(n,min) for c in Compositions(n,k;min))
 
 @doc (@doc compositions) ncompositions
 

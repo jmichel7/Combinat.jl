@@ -26,7 +26,7 @@ end
 @test mytest("Combinat.jl","narrangements(\"settle\",2)","14")
 @test mytest("Combinat.jl","narrangements(\"settle\")","523")
 @test mytest("Combinat.jl","String.(arrangements(\"settle\",2))","14-element Vector{String}:\n \"ee\"\n \"el\"\n \"es\"\n \"et\"\n \"le\"\n \"ls\"\n \"lt\"\n \"se\"\n \"sl\"\n \"st\"\n \"te\"\n \"tl\"\n \"ts\"\n \"tt\"")
-@test mytest("Combinat.jl","permutations(3)","6-element Vector{Any}:\n [1, 2, 3]\n [1, 3, 2]\n [2, 1, 3]\n [2, 3, 1]\n [3, 1, 2]\n [3, 2, 1]")
+@test mytest("Combinat.jl","permutations(3)","6-element Vector{Vector{Int64}}:\n [1, 2, 3]\n [1, 3, 2]\n [2, 1, 3]\n [2, 3, 1]\n [3, 1, 2]\n [3, 2, 1]")
 @test mytest("Combinat.jl","sum(first(p) for p in Combinat.Permutations(5))","360")
 @test mytest("Combinat.jl","a=Combinat.Partitions(5)","Partitions(5)")
 @test mytest("Combinat.jl","collect(a)","7-element Vector{Vector{Int64}}:\n [1, 1, 1, 1, 1]\n [2, 1, 1, 1]\n [2, 2, 1]\n [3, 1, 1]\n [3, 2]\n [4, 1]\n [5]")
