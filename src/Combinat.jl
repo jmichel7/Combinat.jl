@@ -44,7 +44,7 @@ counting functions:
 number theory
 
 [`prime_residues`](@ref),
-[`primitiveroot`](@ref)
+[`primitiveroot`](@ref),
 [`moebius`](@ref)
 
 some structural manipulations not (yet?) in Julia:
@@ -53,8 +53,8 @@ some structural manipulations not (yet?) in Julia:
 [`tally`](@ref),
 [`tally_sorted`](@ref),
 [`collectby`](@ref),
-[`unique_sorted!`](@ref)
-[`union_sorted`](@ref)
+[`unique_sorted!`](@ref),
+[`union_sorted`](@ref),
 [`intersect_sorted`](@ref)
 
 matrix blocks:
@@ -327,8 +327,8 @@ end
 #--------------------- combinations -------------------
 
 """
-`Combinat.Combinations(s[,k])`   is  an   iterator  which   enumerates  the
-combinations  of  the  multiset  `s`  (with  `k`  elements  if `k`given) in
+`Combinat.Combinations(s[,k];dict=false)`  is an  iterator which enumerates
+the  combinations of  the multiset  `s` (with  `k` elements if `k`given) in
 lexicographic order. The elements of `s` must be sortable. If they are not,
 but  hashable, giving the  keyword `dict=true` will  give an iterator on an
 unsorted result.
@@ -756,7 +756,7 @@ There are approximately `exp(π√(2n/3))/(4√3 n)` partitions of `n`.
 
 A   *partition*  is   a  decomposition   `n=p₁+p₂+…+pₖ`  in  integers  with
 `p₁≥p₂≥…≥pₖ>0`, and is represented by the vector `p=[p₁,p₂,…,pₖ]`. We write
-`p⊢n`.
+`p⊢n` to say that `p` is a partition of `n`.
 
 ```julia-repl
 julia> npartitions(7)
@@ -791,8 +791,8 @@ julia> partitions(7,3)
  [5, 1, 1]
 ```
 
-The partitions are implemented by an iterator `Combinat.Partitions` which
-can be used to enumerate the partitions of a large number.
+The  partitions are implemented by an iterator `Combinat.Partitions(n[,k])`
+which can be used to enumerate the partitions of a large number.
 """
 partitions(n::Integer)=collect(Partitions(n))
 partitions(n::Integer,k::Integer)=collect(Partitions(n,k))
@@ -1307,8 +1307,9 @@ julia> compositions(4,2;min=0)
  [3, 1]
  [4, 0]
 ```
-The compositions are implemented by an iterator `Combinat.Compositions` which
-can be used to enumerate the compositions of a large number.
+The compositions are implemented by an iterator
+`Combinat.Compositions(n[,k];min=1)`  which  can  be  used to enumerate the
+compositions of a large number.
 """
 compositions(n::T,k::Integer;min=1)where T<:Integer=collect(Compositions(n,k;min))
 
@@ -1756,7 +1757,7 @@ end
 multiplicatively  `mod.  m`  the  `prime_residues(m)`. The function returns
 `nothing` if there is no primitive root `mod. m`.
 
-A  primitive root exists if `m` is of the form `4`, `p^a` or `2p^a` for `p`
+A  primitive root exists if `m` is euqal to `4` or `p^a` or `2p^a` for `p`
 prime>2.
 
 ```julia-repl
