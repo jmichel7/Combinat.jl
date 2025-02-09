@@ -1624,8 +1624,7 @@ julia> conjugate_partition([6])
 ```
 """
 function conjugate_partition(p)
-  if isempty(p) return p end
-  res=zeros(eltype(p),maximum(p))
+  res=zeros(eltype(p),maximum(p;init=0))
   for i in p, j in 1:i res[j]+=1 end
   res
 end
