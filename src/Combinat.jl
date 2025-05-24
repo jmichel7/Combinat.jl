@@ -1360,11 +1360,20 @@ julia> multisets(1:4,3)
 ```
 """
 function multisets(A,i)
-  if i==1 return map(x->[x],A) end
-  vcat(map(j->map(v->pushfirst!(v,A[j]),multisets(A[j:end],i-1)),
-           eachindex(A))...)
+  res=[Vector{eltype(A)}(undef,i)]
+  multisets(res,A,i,1)
+  res
 end
 
+function multisets(res,A,i,j)
+  if i==0 return end
+  for k in j:length(A)
+    if k>j push!(res,copy(res[end])) end
+    res[end][end+1-i]=A[k]
+    multisets(res,A,i-1,k)
+  end
+end
+    
 @doc (@doc multisets) nmultisets
 nmultisets(set,k)=binomial(length(set)+k-1,k)
 
