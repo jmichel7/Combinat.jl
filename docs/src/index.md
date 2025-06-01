@@ -30,6 +30,7 @@ tally_sorted
 collectby
 unique_sorted!
 intersect_sorted
+symdiff_sorted
 union_sorted
 diagblocks
 blocks(m::AbstractMatrix)

@@ -56,6 +56,7 @@ some structural manipulations not (yet?) in Julia:
 [`unique_sorted!`](@ref),
 [`union_sorted`](@ref),
 [`intersect_sorted`](@ref)
+[`symdiff_sorted`](@ref)
 
 matrix blocks:
 
@@ -97,7 +98,8 @@ export combinations, ncombinations, arrangements, narrangements, permutations,
     robinson_schensted,
   bell, stirling1, stirling2, catalan, bernoulli,
   groupby, tally, tally_sorted, collectby, unique_sorted!, intersect_sorted,
-  union_sorted, blocks, diagblocks, prime_residues, primitiveroot, moebius
+  union_sorted, symdiff_sorted, blocks, diagblocks, prime_residues, 
+  primitiveroot, moebius
 
 #--------------------- Structural manipulations -------------------
 """
@@ -318,6 +320,35 @@ function union_sorted(a,b)
       if     c>0 res[ri+=1]=b[bi]; bi+=1
       elseif c<0 res[ri+=1]=a[ai]; ai+=1
       else res[ri+=1]=a[ai]; ai+=1; bi+=1
+      end
+    end
+  end
+  resize!(res,ri)
+end
+
+"""
+`symdiff_sorted(a,b)` 
+
+computes  the symmetric difference of `a` and `b` assumed to be both sorted
+and  without  repetitions  (and  their  elements  sortable).  The result is
+sorted,  so may differ  from `symdiff`; this  function is many times faster
+than `symdiff`.
+"""
+function symdiff_sorted(a,b)
+  if !issorted(a) || !issorted(b) error("arguments should be sorted") end
+  la=length(a)
+  lb=length(b)
+  res=empty(a)
+  res=similar(a,la+lb)
+  ai=bi=1
+  ri=0
+@inbounds while ai<=la || bi<=lb
+  if     ai>la res[ri+=1]=b[bi]; bi+=1
+  elseif bi>lb res[ri+=1]=a[ai]; ai+=1
+    else c=cmp(a[ai],b[bi])
+      if     c>0 res[ri+=1]=b[bi]; bi+=1
+      elseif c<0 res[ri+=1]=a[ai]; ai+=1
+      else ai+=1; bi+=1
       end
     end
   end
@@ -1498,7 +1529,7 @@ julia> catalan(big(50))
 1978261657756160653623774456
 ```
 """
-catalan(n::Integer)=Integer(prod(i->(n+i)//i,2:n))
+catalan(n::Integer)=div(binomial(2n,n),n+1)
 
 """
 `diagblocks(M::Matrix)`
