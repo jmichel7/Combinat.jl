@@ -105,8 +105,9 @@ export combinations, ncombinations, arrangements, narrangements, permutations,
 """
 `groupby(v,l)`
 
-group  elements of collection `l` according  to the corresponding values in
-the collection `v` (which should have same length as `l`).
+return  a  `Dict`  grouping  elements  of  collection  `l` according to the
+corresponding  values in the collection `v`,  which should have same length
+as `l`, and whose elements must be hashable.
 
 ```julia-rep1
 julia> groupby([31,28,31,30,31,30,31,31,30,31,30,31],
@@ -126,8 +127,8 @@ end
 """
 `groupby(f::Function,l)`
 
-group  elements of collection `l` according to the values taken by function
-`f` on them. The values of `f` must be hashable.
+return a `Dict` grouping elements of collection `l` according to the values
+taken by function `f` on them. The values of `f` must be hashable.
 
 ```julia-repl
 julia> groupby(iseven,1:10)
