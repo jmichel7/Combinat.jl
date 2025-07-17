@@ -409,21 +409,20 @@ struct Combinations{T}
   s::Vector{T}  # allunique collection
 end
 
-function Base.iterate(S::Combinations)
-  t=S.m
-  k=S.k
-  n=sum(t)
+@inline function Base.iterate(S::Combinations)
+  (;m,k,s)=S
+  n=sum(m)
   if k>n return nothing end
   v=fill(0,k)
   u=1
   j=0
   for l in 1:k
-    if j<t[u] j+=1 
+    if j<m[u] j+=1 
     else u+=1;j=1
     end
     v[l]=u
   end
-  S.s[v], v
+  s[v], v
 end
 
 Base.eltype(x::Combinations{T}) where T=Vector{T}
@@ -432,22 +431,21 @@ Base.show(io::IO,x::Combinations)=print(io,"Combinations(",vcat(fill.(x.s,x.m)..
 
 @inline function Base.iterate(S::Combinations,v)
   i=length(v)
-  t=S.m
-  k=S.k
+  (;m,k,s)=S
   while i>0
-    if (i==k && v[i]<length(t)) || (i<k && v[i]<v[i+1])
+    if (i==k && v[i]<length(m)) || (i<k && v[i]<v[i+1])
       u=v[i]+1
       j=0
       for l in i+1:k if v[l]==u j+=1 else break end end
-      if j>=t[u] i-=1;continue end
+      if j>=m[u] i-=1;continue end
       j=0
       for l in i:k
-        if j<t[u] j+=1 
+        if j<m[u] j+=1 
         else u+=1;j=1
         end
         v[l]=u
       end
-      return S.s[v],v
+      return s[v],v
       i=k;continue
     else i-=1;continue 
     end
@@ -507,9 +505,8 @@ julia> combinations([1,2,2,3])
  [2, 2, 3]
  [1, 2, 2, 3]
 ```
-The combinations are implemented by an iterator
-[`Combinations`](@ref)  which can enumerate  the combinations of a
-large multiset.
+The  combinations  are  implemented  by  an iterator [`Combinations`](@ref)
+which can enumerate the combinations of a large multiset.
 """
 combinations(x...;kw...)=collect(Combinations(x...;kw...))
 
@@ -535,17 +532,68 @@ function ncombinations2(mul,k)
 end
 
 #--------------------- arrangements -------------------
-function arr(l,combs,blist,mset,k)local i,start
+struct Arrangements{T}
+  mset::Vector{T}
+  k::Int
+  Arrangements(mset::AbstractVector{T},k) where T =new{T}(sort(collect(mset)),k)
+end
+
+Base.IteratorSize(a::Arrangements)=Base.SizeUnknown()
+#Base.length(a::Arrangements)=narrangements(a.mset,a.k)
+
+Base.eltype(a::Arrangements{T}) where T =Vector{T}
+
+@inline function Base.iterate(a::Arrangements)
+  (;mset,k)=a
+  if k>length(mset) return nothing end
+  mset[1:k],(i=1,l=0,blist=trues(length(mset)),ilist=fill(0,k),arr=mset[1:k])
+end
+
+@inline function Base.iterate(a::Arrangements,state)
+  (;i,l,blist,ilist,arr)=state
+  (;mset,k)=a
+  while true
+    if i>length(blist) 
+      if l>0
+        i=ilist[l]
+        blist[i]=true
+        i+=1
+        l-=1
+        continue
+      else return nothing
+      end
+    end
+    if blist[i] && (i==length(blist) || !blist[i+1] || mset[i+1]!=mset[i])
+      if l<k arr[l+1]=mset[i] end
+      if l<k-1
+        blist[i]=false
+        l+=1
+        ilist[l]=i
+        i=1
+        continue
+      elseif arr!=mset[1:k]
+        return copy(arr),(i=i+1,l=k-1,blist,ilist,arr)
+      end
+    end
+    i+=1
+  end
+end
+
+Arrangements(mset::AbstractVector)=Iterators.flatten(Arrangements(mset,k) for k in 0:length(mset))
+
+# when arr called arrs has been filled up to l and blist records which 
+# elements of mset have not been used.
+function arr(l,arrs,blist,mset,k)local i,start
   if l==k return end
   start=true
   for i in eachindex(blist)
     if blist[i] && (i==length(blist) || !blist[i+1] || mset[i+1]!=mset[i])
       if start start=false
-      else push!(combs,copy(combs[end]))
+      else push!(arrs,copy(arrs[end]))
       end
-      combs[end][l+1]=mset[i]
+      arrs[end][l+1]=mset[i]
       blist[i]=false
-      arr(l+1,combs,blist,mset,k)
+      arr(l+1,arrs,blist,mset,k)
       blist[i]=true
     end
   end
@@ -600,14 +648,16 @@ julia> String.(arrangements("settle",2))
  "ts"
  "tt"
 ```
+The  arrangements are implemented  by an iterator  `Arrangements` which can
+enumerate the combinations of a large multiset.
 """
 function arrangements(mset,k)
   mset=sort(collect(mset))
   blist=trues(length(mset))
   if k>length(mset) return Vector{eltype(mset)}[] end
-  combs=[mset[1:k]]
-  arr(0,combs,blist,mset,k)
-  combs
+  arrs=[mset[1:k]]
+  arr(0,arrs,blist,mset,k)
+  arrs
 end
 
 arrangements(mset)=vcat(arrangements.(Ref(mset),0:length(mset))...)
