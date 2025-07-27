@@ -15,16 +15,27 @@ Classical enumerations:
 [`compositions`](@ref),
 [`multisets`](@ref)
 
+some  of them are  implemented by iterators,  which have the  same name but
+capitalized.  This  allows  to  do  itemwise  computations  on  very  large
+enumerations without allocating memory:
+
+[`Combinations`](@ref),
+[`Arrangements`](@ref),
+[`Permutations`](@ref),
+[`Partitions`](@ref),
+[`Compositions`](@ref),
+
 functions to count enumerations without computing them:
 
 `ncombinations`,
 `narrangements`,
+`npermutations`,
 `npartitions`,
 `npartition_tuples`,
 `ncompositions`,
 `nmultisets`
 
-some functions on partitions and permutations:
+some functions on partitions and tableaux:
 
 [`lcm_partitions`](@ref),
 [`gcd_partitions`](@ref),
@@ -55,7 +66,7 @@ some structural manipulations not (yet?) in Julia:
 [`collectby`](@ref),
 [`unique_sorted!`](@ref),
 [`union_sorted`](@ref),
-[`intersect_sorted`](@ref)
+[`intersect_sorted`](@ref),
 [`symdiff_sorted`](@ref)
 
 matrix blocks:
@@ -69,13 +80,13 @@ welcome).
 After  writing  most  of  this  module,  I  became  aware  of  the  package
 `Combinatorics`  which has a  considerable overlap. However  there are some
 discrepancies  between these  two packages  which make  `Combinatorics` not
-easily usable for me:
+a suitable replacement:
 
   - I often  use sorting  in algorithms  where `Combinatorics` uses hashing.
     So  the algorithms do  not always apply  to the same  types (sorting is
-    often faster). For some algorithms, a keyword lets you choose a hashing
-    variant.  Here hashable refers to a type  which has a `hash` method and
-    sortable to a type which has an `isless` method.
+    often  faster). For  some algorithms,  I have  a keyword which lets you
+    choose  a hashing variant. Here  hashable refers to a  type which has a
+    `hash` method and sortable to a type which has an `isless` method.
 
   - `Combinatorics.combinations` does not include the empty subset.
 
@@ -86,14 +97,21 @@ easily usable for me:
 
   - `Combinatorics` has fewer enumerations.
 
-A  less  fundamental  discrepancy  concerns  names. However I would welcome
-discussions  with the authors of `Combinatorics` to see if the two packages
-could be made more compatible in this respect.
+A    less   fundamental   discrepancy   concerns   names.   For   instance,
+`Combinatorics.multiset_combinations`   and   `Combinatorics.powerset`  are
+cases   of  `Combinat.combinations`;  `Combinatorics.multiexponents`  is  a
+special case of `Combinat.compositions`; `Combinatorics.integer_partitions`
+is  a case  of `Combinat.partitions`; `Combinatorics.multiset_permutations`
+is `Combinat.arrangements`. I would welcome discussions with the authors of
+`Combinatorics` to see if the two packages could be made more compatible in
+this respect.
 """
 module Combinat
-export combinations, ncombinations, arrangements, narrangements, permutations,
-  partitions, npartitions, partition_tuples, npartition_tuples, 
-  compositions, ncompositions, multisets, nmultisets, 
+export Combinations, combinations, ncombinations, 
+  Arrangements, arrangements, narrangements, 
+  Permutations, permutations, npermutations,
+  Partitions, partitions, npartitions, partition_tuples, npartition_tuples, 
+  Compositions, compositions, ncompositions, multisets, nmultisets, 
   lcm_partitions, gcd_partitions, conjugate_partition, dominates, tableaux,
     robinson_schensted,
   bell, stirling1, stirling2, catalan, bernoulli,
@@ -186,11 +204,37 @@ tally(v::AbstractRange;k...)=v.=>1
 
 tally(v;k...)=tally(collect(v);k...) # for iterables
 
+struct Tally_sorted{T}
+  v::Vector{T}
+end
+
+Base.IteratorSize(::Type{Tally_sorted{T}}) where T=Base.SizeUnknown()
+Base.eltype(::Type{Tally_sorted{T}}) where T=Pair{T,Int}
+
+@inline function Base.iterate(t::Tally_sorted)
+  for i in eachindex(t.v)
+    if i==length(t.v) || t.v[i]!=t.v[i+1] return (t.v[i]=>i,i+1) end
+  end
+end
+    
+@inline function Base.iterate(t::Tally_sorted,j)
+  for i in j:length(t.v)
+    if i==length(t.v) || t.v[i]!=t.v[i+1] return (t.v[i]=>i-j+1,i+1) end
+  end
+end
+
 """
 `tally_sorted(v)`
 
 `tally_sorted`  is like `tally`  but works only  for a sorted iterable. The
-point is that it is *very* fast.
+point is that it is very fast.
+```julia-repl
+julia> tally_sorted("aabbbeee")
+3-element Vector{Pair{Char, Int64}}:
+ 'a' => 2
+ 'b' => 3
+ 'e' => 3
+```
 """
 function tally_sorted(v)
   res=Pair{eltype(v),Int}[]
@@ -264,7 +308,7 @@ function collectby(f,v)
   res
 end
 
-"`unique_sorted!(v::Vector)` faster than unique! for sorted `v`"
+"`unique_sorted!(v::Vector)` many times faster than unique! for sorted `v`"
 function unique_sorted!(v::Vector)
   i=1
 @inbounds  for j in 2:length(v)
@@ -359,13 +403,13 @@ end
 #--------------------- combinations -------------------
 
 """
-`Combinat.Combinations(s[,k];dict=false)`  is an  iterator which enumerates
+`Combinations(s[,k];dict=false)`  is an  iterator which enumerates
 the  combinations of  the multiset  `s` (with  `k` elements if `k`given) in
 lexicographic order. The elements of `s` must be sortable. If they are not,
-but  hashable, giving the  keyword `dict=true` will  give an iterator on an
-unsorted result.
+but  hashable, giving the  keyword `dict=true` will  give an iterator which
+enumerates the combinations in an unspecified order.
 ```julia-repl
-julia> a=Combinat.Combinations(1:4);
+julia> a=Combinations(1:4);
 
 julia> collect(a)
 16-element Vector{Vector{Int64}}:
@@ -386,7 +430,7 @@ julia> collect(a)
  [2, 3, 4]
  [1, 2, 3, 4]
 
-julia> a=Combinat.Combinations([1,2,2,3,4,4],3)
+julia> a=Combinations([1,2,2,3,4,4],3)
 Combinations([1, 2, 2, 3, 4, 4],3)
 
 julia> collect(a)
@@ -404,9 +448,9 @@ julia> collect(a)
 ```
 """
 struct Combinations{T}
-  m::Vector{Int} # multiplicities of elements of s
+  m::Vector{Int} # multiplicities of elements of mset
   k::Int
-  s::Vector{T}  # allunique collection
+  s::Vector{T}  # unique elements of mset
 end
 
 @inline function Base.iterate(S::Combinations)
@@ -531,73 +575,97 @@ function ncombinations2(mul,k)
 # sum(i->ncombinations2((@view mul[2:end]),k-i),0:min(mul[1],k)) # allocates
 end
 
+#--------------------- permutations -------------------
+"""
+`permutations(v::AbstractVector)`, `permutations(n::Int)`, `npermutations`
+
+in  the first  form, the  elements of  `v` must  be sortable.  The function
+returns  in lexicographic  order the  distinct permutations  of the  set or
+multiset `v`.  This   is  the  same   as  `arrangements(v,length(v))`.  
+
+The second form is the same as `permutations(1:n)`.
+
+`permutations` is implemented by an iterator `Permutations`.
+
+`npermutations` counts the permutations (fast) without computing them.
+
+```julia-repl
+julia> permutations(3)
+6-element Vector{Vector{Int64}}:
+ [1, 2, 3]
+ [1, 3, 2]
+ [2, 1, 3]
+ [2, 3, 1]
+ [3, 1, 2]
+ [3, 2, 1]
+
+julia> sum(first(p) for p in Permutations(5))
+360
+
+julia> permutations([:b,:b,:a,:a])
+6-element Vector{Vector{Symbol}}:
+ [:a, :a, :b, :b]
+ [:a, :b, :a, :b]
+ [:a, :b, :b, :a]
+ [:b, :a, :a, :b]
+ [:b, :a, :b, :a]
+ [:b, :b, :a, :a]
+ 
+julia> npermutations([:b,:b,:a,:a])
+6
+```
+"""
+permutations(v)=collect(Permutations(v))
+
+"`Permutations` is an iterator for `permutations`"
+struct Permutations{T}
+  v::Vector{T}
+  Permutations(v::AbstractVector{T};srt=true) where T =new{T}(srt ? sort(v) : v)
+end
+
+Permutations(n::Int)=Permutations(1:n)
+Base.show(io::IO,x::Permutations)=print(io,"Permutations(",x.v,")")
+
+function Base.length(p::Permutations)
+  cnt=factorial(length(p.v))
+  for (e,c) in Tally_sorted(p.v)
+    cnt=div(cnt,factorial(c)) 
+  end
+  cnt
+end
+
+npermutations(v)=length(Permutations(v))
+@doc (@doc permutations) npermutations
+
+Base.eltype(::Type{Permutations{T}}) where T =Vector{T}
+
+function Base.iterate(P::Permutations)
+  (P.v,P.v)
+end
+
+@inline function Base.iterate(P::Permutations,p)
+  n=length(p)
+  p=copy(p)
+  i=n-1;while i>0 && p[i]>=p[i+1] i-=1 end
+  if i<=0 return end
+  j=n;
+  while p[i]>=p[j] j-=1 end
+  p[i],p[j]=p[j],p[i]
+  i+=1
+  j=n
+  while i<j
+    p[i],p[j]=p[j],p[i]
+    i+=1;j-=1
+  end
+  (p,p)
+end
 #--------------------- arrangements -------------------
-struct Arrangements{T}
-  mset::Vector{T}
-  k::Int
-  Arrangements(mset::AbstractVector{T},k) where T =new{T}(sort(collect(mset)),k)
-end
+"`Arrangements` is an iterator for `arrangements`"
+Arrangements(mset,k)=(w for v in Combinations(mset,k) 
+                        for w in Permutations(v;srt=false))
 
-Base.IteratorSize(a::Arrangements)=Base.SizeUnknown()
-#Base.length(a::Arrangements)=narrangements(a.mset,a.k)
-
-Base.eltype(a::Arrangements{T}) where T =Vector{T}
-
-@inline function Base.iterate(a::Arrangements)
-  (;mset,k)=a
-  if k>length(mset) return nothing end
-  mset[1:k],(i=1,l=0,blist=trues(length(mset)),ilist=fill(0,k),arr=mset[1:k])
-end
-
-@inline function Base.iterate(a::Arrangements,state)
-  (;i,l,blist,ilist,arr)=state
-  (;mset,k)=a
-  while true
-    if i>length(blist) 
-      if l>0
-        i=ilist[l]
-        blist[i]=true
-        i+=1
-        l-=1
-        continue
-      else return nothing
-      end
-    end
-    if blist[i] && (i==length(blist) || !blist[i+1] || mset[i+1]!=mset[i])
-      if l<k arr[l+1]=mset[i] end
-      if l<k-1
-        blist[i]=false
-        l+=1
-        ilist[l]=i
-        i=1
-        continue
-      elseif arr!=mset[1:k]
-        return copy(arr),(i=i+1,l=k-1,blist,ilist,arr)
-      end
-    end
-    i+=1
-  end
-end
-
-Arrangements(mset::AbstractVector)=Iterators.flatten(Arrangements(mset,k) for k in 0:length(mset))
-
-# when arr called arrs has been filled up to l and blist records which 
-# elements of mset have not been used.
-function arr(l,arrs,blist,mset,k)local i,start
-  if l==k return end
-  start=true
-  for i in eachindex(blist)
-    if blist[i] && (i==length(blist) || !blist[i+1] || mset[i+1]!=mset[i])
-      if start start=false
-      else push!(arrs,copy(arrs[end]))
-      end
-      arrs[end][l+1]=mset[i]
-      blist[i]=false
-      arr(l+1,arrs,blist,mset,k)
-      blist[i]=true
-    end
-  end
-end
+Arrangements(mset::AbstractVector)=(w for k in 0:length(mset) 
+                                      for w in Arrangements(mset,k))
 
 """
 `arrangements(mset[,k])`, `narrangements(mset[,k])`
@@ -625,42 +693,31 @@ while all possible words (including the empty one) are:
 julia> narrangements("settle")
 523
 ```
-The  result returned  by 'arrangements'  is sorted  (the elements of `mset`
-must  be sortable), which means in  this example that the possibilities are
-listed  in the same  order as they  appear in the  dictionary. Here are the
-two-letter words:
-
+Here are the two-letter words:
 ```julia-repl
 julia> String.(arrangements("settle",2))
 14-element Vector{String}:
  "ee"
  "el"
- "es"
- "et"
  "le"
- "ls"
- "lt"
+ "es"
  "se"
- "sl"
- "st"
+ "et"
  "te"
+ "ls"
+ "sl"
+ "lt"
  "tl"
+ "st"
  "ts"
  "tt"
 ```
 The  arrangements are implemented  by an iterator  `Arrangements` which can
-enumerate the combinations of a large multiset.
+enumerate the arrangements of a large multiset.
 """
-function arrangements(mset,k)
-  mset=sort(collect(mset))
-  blist=trues(length(mset))
-  if k>length(mset) return Vector{eltype(mset)}[] end
-  arrs=[mset[1:k]]
-  arr(0,arrs,blist,mset,k)
-  arrs
-end
+arrangements(mset,k)=collect(Arrangements(mset,k))
 
-arrangements(mset)=vcat(arrangements.(Ref(mset),0:length(mset))...)
+arrangements(mset)=collect(Arrangements(mset))
 
 # narrangements from the decreasing list of multiplicities tt
 function narr(tt,k::Int)::Union{Int,BigInt}
@@ -677,71 +734,19 @@ end
 @doc (@doc arrangements) narrangements
 function narrangements(mset,k)
   tt=sort!(last.(tally(mset)),rev=true)
-  narr(tt,Int(k))
+  narr(tt,k)
 end
   
 function narrangements(mset)
   tt=sort!(last.(tally(mset)),rev=true)
   sum(narr(tt,k) for k in 0:length(mset))
 end
-#--------------------- permutations -------------------
-"""
-`permutations(n)`
-
-returns  in lexicographic order the permutations of `1:n`. This is a faster
-version  of  `arrangements(1:n,n)`.  `permutations`  is  implemented  by an
-iterator  `Combinat.Permutations`  which  can  be  used  to  enumerate  the
-permutations of a large number.
-
-```julia-repl
-julia> permutations(3)
-6-element Vector{Vector{Int64}}:
- [1, 2, 3]
- [1, 3, 2]
- [2, 1, 3]
- [2, 3, 1]
- [3, 1, 2]
- [3, 2, 1]
-
-julia> sum(first(p) for p in Combinat.Permutations(5))
-360
-```
-"""
-permutations(n)=collect(Permutations(n))
-
-struct Permutations
-  n::Int
-end
-
-Base.length(p::Permutations)=factorial(p.n)
-Base.eltype(::Type{Permutations})=Vector{Int}
-
-function Base.iterate(P::Permutations)
-  u=collect(1:P.n)
-  (u,u)
-end
-
-@inline function Base.iterate(P::Permutations,p)
-  n=P.n
-  p=copy(p)
-  i=n-1;while i>0 && p[i]>p[i+1] i-=1 end
-  if iszero(i) return end
-  j=n;while p[i]>p[j] j-=1 end
-  p[i],p[j]=p[j],p[i]
-  i+=1
-  j=n
-  while i<j
-    p[i],p[j]=p[j],p[i]
-    i+=1;j-=1
-  end
-  (p,p)
-end
 #--------------------- partitions -------------------
 """
-`Combinat.Partitions(n[,k])` is an iterator which enumerates the partitions
+`Partitions(n[,k])` is an iterator which enumerates the partitions
 of `n` (with `k` parts if `k`given) in lexicographic order.
 ```julia-repl
-julia> a=Combinat.Partitions(5)
+julia> a=Partitions(5)
 Partitions(5)
 
 julia> collect(a)
@@ -754,7 +759,7 @@ julia> collect(a)
  [4, 1]
  [5]
 
-julia> a=Combinat.Partitions(10,3)
+julia> a=Partitions(10,3)
 Partitions(10,3)
 
 julia> collect(a)
@@ -873,7 +878,7 @@ julia> partitions(7,3)
  [5, 1, 1]
 ```
 
-The  partitions are implemented by an iterator `Combinat.Partitions(n[,k])`
+The  partitions are implemented by an iterator `Partitions(n[,k])`
 which can be used to enumerate the partitions of a large number.
 """
 partitions(n::Integer)=collect(Partitions(n))
@@ -1202,6 +1207,7 @@ julia> bell(14)
 julia> bell(big(30))
 846749014511809332450147
 ```
+Also, `bell(n)` is the number of unordered partitions of a set of size `n`.
 """
 function bell(n)
   bell_=[one(n)]
@@ -1306,7 +1312,8 @@ function npartition_tuples(n,k)
   end
   res
 end
-
+#---------------------- compositions --------------------------------
+"`Compositions` is an iterator for `compositions`"
 struct Compositions{T<:Integer}
   n::T
   k::Int
@@ -1389,9 +1396,8 @@ julia> compositions(4,2;min=0)
  [3, 1]
  [4, 0]
 ```
-The compositions are implemented by an iterator
-`Combinat.Compositions(n[,k];min=1)`  which  can  be  used to enumerate the
-compositions of a large number.
+The compositions are implemented by an iterator `Compositions(n[,k];min=1)`
+which can be used to enumerate the compositions of a large number.
 """
 compositions(n::T,k::Integer;min=1)where T<:Integer=collect(Compositions(n,k;min))
 
@@ -1403,7 +1409,7 @@ ncompositions(n;min=1)=min==1 ? (n==0 ? 1 : 2^(n-1)) :
   sum(k->ncompositions(n,k;min),1:div(n,min))
 
 @doc (@doc compositions) ncompositions
-
+#------------------------ multisets ---------------------------------
 """
 `multisets(set,k)`, `nmultisets(set,k)`
 
@@ -1459,6 +1465,7 @@ end
 @doc (@doc multisets) nmultisets
 nmultisets(set,k)=binomial(length(set)+k-1,k)
 
+#--------------------------- unexported functions ------------------------
 # symmetric difference of sorted multisets
 function symdiffmset(a,b)
   res=eltype(a)[]
@@ -1507,6 +1514,7 @@ function pushcopy!(v,i) # faster than push!(copy(v),i)
   res
 end
 
+#--------------------------- functions on partitions ------------------------
 """
 `lcm_partitions(p1,…,pn)`
 
@@ -1847,7 +1855,7 @@ end
 multiplicatively  `mod.  m`  the  `prime_residues(m)`. The function returns
 `nothing` if there is no primitive root `mod. m`.
 
-A  primitive root exists if `m` is euqal to `4` or `p^a` or `2p^a` for `p`
+A  primitive root exists if `m` is equal to `4` or `p^a` or `2p^a` for `p`
 prime>2.
 
 ```julia-repl

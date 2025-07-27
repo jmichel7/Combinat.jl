@@ -20,11 +20,15 @@ Classical enumerations:
 
 [`combinations`](index.md#Combinat.combinations), [`arrangements`](index.md#Combinat.arrangements), [`permutations`](index.md#Combinat.permutations), [`partitions`](index.md#Combinat.partitions), [`partition_tuples`](index.md#Combinat.partition_tuples), [`compositions`](index.md#Combinat.compositions), [`multisets`](index.md#Combinat.multisets)
 
+some  of them are  implemented by iterators,  which have the  same name but capitalized.  This  allows  to  do  itemwise  computations  on  very  large enumerations without allocating memory:
+
+[`Combinations`](index.md#Combinat.Combinations), [`Arrangements`](index.md#Combinat.Arrangements), [`Permutations`](index.md#Combinat.Permutations), [`Partitions`](index.md#Combinat.Partitions), [`Compositions`](index.md#Combinat.Compositions),
+
 functions to count enumerations without computing them:
 
-`ncombinations`, `narrangements`, `npartitions`, `npartition_tuples`, `ncompositions`, `nmultisets`
+`ncombinations`, `narrangements`, `npermutations`, `npartitions`, `npartition_tuples`, `ncompositions`, `nmultisets`
 
-some functions on partitions and permutations:
+some functions on partitions and tableaux:
 
 [`lcm_partitions`](index.md#Combinat.lcm_partitions), [`gcd_partitions`](index.md#Combinat.gcd_partitions), [`conjugate_partition`](index.md#Combinat.conjugate_partition), [`dominates`](index.md#Combinat.dominates), [`tableaux`](index.md#Combinat.tableaux), [`robinson_schensted`](index.md#Combinat.robinson_schensted)
 
@@ -38,7 +42,7 @@ number theory
 
 some structural manipulations not (yet?) in Julia:
 
-[`groupby`](index.md#Combinat.groupby), [`tally`](index.md#Combinat.tally), [`tally_sorted`](index.md#Combinat.tally_sorted), [`collectby`](index.md#Combinat.collectby), [`unique_sorted!`](index.md#Combinat.unique_sorted!), [`union_sorted`](index.md#Combinat.union_sorted), [`intersect_sorted`](index.md#Combinat.intersect_sorted) [`symdiff_sorted`](index.md#Combinat.symdiff_sorted)
+[`groupby`](index.md#Combinat.groupby), [`tally`](index.md#Combinat.tally), [`tally_sorted`](index.md#Combinat.tally_sorted), [`collectby`](index.md#Combinat.collectby), [`unique_sorted!`](index.md#Combinat.unique_sorted!), [`union_sorted`](index.md#Combinat.union_sorted), [`intersect_sorted`](index.md#Combinat.intersect_sorted), [`symdiff_sorted`](index.md#Combinat.symdiff_sorted)
 
 matrix blocks:
 
@@ -46,17 +50,17 @@ matrix blocks:
 
 Have  a  look  at  the  individual  docstrings  and  enjoy (any feedback is welcome).  
 
-After  writing  most  of  this  module,  I  became  aware  of  the  package `Combinatorics`  which has a  considerable overlap. However  there are some discrepancies  between these  two packages  which make  `Combinatorics` not easily usable for me:
+After  writing  most  of  this  module,  I  became  aware  of  the  package `Combinatorics`  which has a  considerable overlap. However  there are some discrepancies  between these  two packages  which make  `Combinatorics` not a suitable replacement:
 
-  * I often  use sorting  in algorithms  where `Combinatorics` uses hashing. So  the algorithms do  not always apply  to the same  types (sorting is often faster). For some algorithms, a keyword lets you choose a hashing variant.  Here hashable refers to a type  which has a `hash` method and sortable to a type which has an `isless` method.
+  * I often  use sorting  in algorithms  where `Combinatorics` uses hashing. So  the algorithms do  not always apply  to the same  types (sorting is often  faster). For  some algorithms,  I have  a keyword which lets you choose  a hashing variant. Here  hashable refers to a  type which has a `hash` method and sortable to a type which has an `isless` method.
   * `Combinatorics.combinations` does not include the empty subset.
   * I use lower  case for functions  that return enumerations  as a list and camel  case  for  iterators.  Many  enumerations  have  both  variants. `Combinatorics` has only one variant for enumerations, which is often a lowercase iterator.
   * `Combinatorics` has fewer enumerations.
 
-A  less  fundamental  discrepancy  concerns  names. However I would welcome discussions  with the authors of `Combinatorics` to see if the two packages could be made more compatible in this respect.
+A    less   fundamental   discrepancy   concerns   names.   For   instance, `Combinatorics.multiset_combinations`   and   `Combinatorics.powerset`  are cases   of  `Combinat.combinations`;  `Combinatorics.multiexponents`  is  a special case of `Combinat.compositions`; `Combinatorics.integer_partitions` is  a case  of `Combinat.partitions`; `Combinatorics.multiset_permutations` is `Combinat.arrangements`. I would welcome discussions with the authors of `Combinatorics` to see if the two packages could be made more compatible in this respect.
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L1-L92' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L1-L108' class='documenter-source'>source</a><br>
 
 <a id='Combinat.combinations' href='#Combinat.combinations'>#</a>
 **`Combinat.combinations`** &mdash; *Function*.
@@ -98,17 +102,17 @@ julia> combinations([1,2,2,3])
 The  combinations  are  implemented  by  an iterator [`Combinations`](index.md#Combinat.Combinations) which can enumerate the combinations of a large multiset.
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L469-L512' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L511-L554' class='documenter-source'>source</a><br>
 
 <a id='Combinat.Combinations' href='#Combinat.Combinations'>#</a>
 **`Combinat.Combinations`** &mdash; *Type*.
 
 
 
-`Combinat.Combinations(s[,k];dict=false)`  is an  iterator which enumerates the  combinations of  the multiset  `s` (with  `k` elements if `k`given) in lexicographic order. The elements of `s` must be sortable. If they are not, but  hashable, giving the  keyword `dict=true` will  give an iterator on an unsorted result.
+`Combinations(s[,k];dict=false)`  is an  iterator which enumerates the  combinations of  the multiset  `s` (with  `k` elements if `k`given) in lexicographic order. The elements of `s` must be sortable. If they are not, but  hashable, giving the  keyword `dict=true` will  give an iterator which enumerates the combinations in an unspecified order.
 
 ```julia-repl
-julia> a=Combinat.Combinations(1:4);
+julia> a=Combinations(1:4);
 
 julia> collect(a)
 16-element Vector{Vector{Int64}}:
@@ -129,7 +133,7 @@ julia> collect(a)
  [2, 3, 4]
  [1, 2, 3, 4]
 
-julia> a=Combinat.Combinations([1,2,2,3,4,4],3)
+julia> a=Combinations([1,2,2,3,4,4],3)
 Combinations([1, 2, 2, 3, 4, 4],3)
 
 julia> collect(a)
@@ -147,7 +151,7 @@ julia> collect(a)
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L361-L405' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L405-L449' class='documenter-source'>source</a><br>
 
 <a id='Combinat.arrangements' href='#Combinat.arrangements'>#</a>
 **`Combinat.arrangements`** &mdash; *Function*.
@@ -174,40 +178,56 @@ julia> narrangements("settle")
 523
 ```
 
-The  result returned  by 'arrangements'  is sorted  (the elements of `mset` must  be sortable), which means in  this example that the possibilities are listed  in the same  order as they  appear in the  dictionary. Here are the two-letter words:
+Here are the two-letter words:
 
 ```julia-repl
 julia> String.(arrangements("settle",2))
 14-element Vector{String}:
  "ee"
  "el"
- "es"
- "et"
  "le"
- "ls"
- "lt"
+ "es"
  "se"
- "sl"
- "st"
+ "et"
  "te"
+ "ls"
+ "sl"
+ "lt"
  "tl"
+ "st"
  "ts"
  "tt"
 ```
 
-The  arrangements are implemented  by an iterator  `Arrangements` which can enumerate the combinations of a large multiset.
+The  arrangements are implemented  by an iterator  `Arrangements` which can enumerate the arrangements of a large multiset.
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L604-L655' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L670-L717' class='documenter-source'>source</a><br>
+
+<a id='Combinat.Arrangements' href='#Combinat.Arrangements'>#</a>
+**`Combinat.Arrangements`** &mdash; *Function*.
+
+
+
+`Arrangements` is an iterator for `arrangements`
+
+
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L663' class='documenter-source'>source</a><br>
 
 <a id='Combinat.permutations' href='#Combinat.permutations'>#</a>
 **`Combinat.permutations`** &mdash; *Function*.
 
 
 
-`permutations(n)`
+`permutations(v::AbstractVector)`, `permutations(n::Int)`, `npermutations`
 
-returns  in lexicographic order the permutations of `1:n`. This is a faster version  of  `arrangements(1:n,n)`.  `permutations`  is  implemented  by an iterator  `Combinat.Permutations`  which  can  be  used  to  enumerate  the permutations of a large number.
+in  the first  form, the  elements of  `v` must  be sortable.  The function returns  in lexicographic  order the  distinct permutations  of the  set or multiset `v`.  This   is  the  same   as  `arrangements(v,length(v))`.  
+
+The second form is the same as `permutations(1:n)`.
+
+`permutations` is implemented by an iterator `Permutations`.
+
+`npermutations` counts the permutations (fast) without computing them.
 
 ```julia-repl
 julia> permutations(3)
@@ -219,12 +239,34 @@ julia> permutations(3)
  [3, 1, 2]
  [3, 2, 1]
 
-julia> sum(first(p) for p in Combinat.Permutations(5))
+julia> sum(first(p) for p in Permutations(5))
 360
+
+julia> permutations([:b,:b,:a,:a])
+6-element Vector{Vector{Symbol}}:
+ [:a, :a, :b, :b]
+ [:a, :b, :a, :b]
+ [:a, :b, :b, :a]
+ [:b, :a, :a, :b]
+ [:b, :a, :b, :a]
+ [:b, :b, :a, :a]
+ 
+julia> npermutations([:b,:b,:a,:a])
+6
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L690-L711' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L579-L617' class='documenter-source'>source</a><br>
+
+<a id='Combinat.Permutations' href='#Combinat.Permutations'>#</a>
+**`Combinat.Permutations`** &mdash; *Type*.
+
+
+
+`Permutations` is an iterator for `permutations`
+
+
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L620' class='documenter-source'>source</a><br>
 
 <a id='Combinat.partitions' href='#Combinat.partitions'>#</a>
 **`Combinat.partitions`** &mdash; *Function*.
@@ -272,10 +314,10 @@ julia> partitions(7,3)
  [5, 1, 1]
 ```
 
-The  partitions are implemented by an iterator `Combinat.Partitions(n[,k])` which can be used to enumerate the partitions of a large number.
+The  partitions are implemented by an iterator `Partitions(n[,k])` which can be used to enumerate the partitions of a large number.
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L832-L880' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L835-L883' class='documenter-source'>source</a><br>
 
 
 `partitions(n::Integer,set::AbstractVector[,k])`, `npartitions(n::Integer,set::AbstractVector[,k])`   
@@ -303,7 +345,7 @@ julia> partitions(17,[10,5,2],3)
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L914-L940' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L917-L943' class='documenter-source'>source</a><br>
 
 
 `partitions(set::AbstractVector[,k])`, `npartitions(set::AbstractVector[,k])`
@@ -341,17 +383,17 @@ julia> partitions(1:4,2)
 Note  that `unique(sort.(partitions(mset[,k])))`  is a  version which works for a multiset `mset`.
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L1025-L1062' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L1028-L1065' class='documenter-source'>source</a><br>
 
 <a id='Combinat.Partitions' href='#Combinat.Partitions'>#</a>
 **`Combinat.Partitions`** &mdash; *Type*.
 
 
 
-`Combinat.Partitions(n[,k])` is an iterator which enumerates the partitions of `n` (with `k` parts if `k`given) in lexicographic order.
+`Partitions(n[,k])` is an iterator which enumerates the partitions of `n` (with `k` parts if `k`given) in lexicographic order.
 
 ```julia-repl
-julia> a=Combinat.Partitions(5)
+julia> a=Partitions(5)
 Partitions(5)
 
 julia> collect(a)
@@ -364,7 +406,7 @@ julia> collect(a)
  [4, 1]
  [5]
 
-julia> a=Combinat.Partitions(10,3)
+julia> a=Partitions(10,3)
 Partitions(10,3)
 
 julia> collect(a)
@@ -380,7 +422,7 @@ julia> collect(a)
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L742-L773' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L745-L776' class='documenter-source'>source</a><br>
 
 <a id='Combinat.partition_tuples' href='#Combinat.partition_tuples'>#</a>
 **`Combinat.partition_tuples`** &mdash; *Function*.
@@ -410,7 +452,7 @@ julia> partition_tuples(3,2)
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L1243-L1266' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L1247-L1270' class='documenter-source'>source</a><br>
 
 <a id='Combinat.compositions' href='#Combinat.compositions'>#</a>
 **`Combinat.compositions`** &mdash; *Function*.
@@ -459,10 +501,20 @@ julia> compositions(4,2;min=0)
  [4, 0]
 ```
 
-The compositions are implemented by an iterator `Combinat.Compositions(n[,k];min=1)`  which  can  be  used to enumerate the compositions of a large number.
+The compositions are implemented by an iterator `Compositions(n[,k];min=1)` which can be used to enumerate the compositions of a large number.
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L1346-L1397' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L1351-L1401' class='documenter-source'>source</a><br>
+
+<a id='Combinat.Compositions' href='#Combinat.Compositions'>#</a>
+**`Combinat.Compositions`** &mdash; *Type*.
+
+
+
+`Compositions` is an iterator for `compositions`
+
+
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L1316' class='documenter-source'>source</a><br>
 
 <a id='Combinat.multisets' href='#Combinat.multisets'>#</a>
 **`Combinat.multisets`** &mdash; *Function*.
@@ -501,7 +553,7 @@ julia> multisets(1:4,3)
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L1409-L1445' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L1413-L1449' class='documenter-source'>source</a><br>
 
 <a id='Combinat.lcm_partitions' href='#Combinat.lcm_partitions'>#</a>
 **`Combinat.lcm_partitions`** &mdash; *Function*.
@@ -522,7 +574,7 @@ julia> lcm_partitions([[1,2],[3,4],[5,6]],[[1],[2,5],[3],[4],[6]])
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L1512-L1529' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L1518-L1535' class='documenter-source'>source</a><br>
 
 <a id='Combinat.gcd_partitions' href='#Combinat.gcd_partitions'>#</a>
 **`Combinat.gcd_partitions`** &mdash; *Function*.
@@ -547,7 +599,7 @@ julia> gcd_partitions([[1,2],[3,4],[5,6]],[[1],[2,5],[3],[4],[6]])
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L1545-L1566' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L1551-L1572' class='documenter-source'>source</a><br>
 
 <a id='Combinat.conjugate_partition' href='#Combinat.conjugate_partition'>#</a>
 **`Combinat.conjugate_partition`** &mdash; *Function*.
@@ -577,7 +629,7 @@ julia> conjugate_partition([6])
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L1695-L1718' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L1701-L1724' class='documenter-source'>source</a><br>
 
 <a id='Combinat.dominates' href='#Combinat.dominates'>#</a>
 **`Combinat.dominates`** &mdash; *Function*.
@@ -594,7 +646,7 @@ true
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L1725-L1736' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L1731-L1742' class='documenter-source'>source</a><br>
 
 <a id='Combinat.tableaux' href='#Combinat.tableaux'>#</a>
 **`Combinat.tableaux`** &mdash; *Function*.
@@ -626,7 +678,7 @@ julia> tableaux([2,2])
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L1745-L1773' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L1751-L1779' class='documenter-source'>source</a><br>
 
 <a id='Combinat.robinson_schensted' href='#Combinat.robinson_schensted'>#</a>
 **`Combinat.robinson_schensted`** &mdash; *Function*.
@@ -643,7 +695,7 @@ julia> robinson_schensted([2,3,4,1])
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L1790-L1800' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L1796-L1806' class='documenter-source'>source</a><br>
 
 <a id='Combinat.bell' href='#Combinat.bell'>#</a>
 **`Combinat.bell`** &mdash; *Function*.
@@ -672,8 +724,10 @@ julia> bell(big(30))
 846749014511809332450147
 ```
 
+Also, `bell(n)` is the number of unordered partitions of a set of size `n`.
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L1183-L1207' class='documenter-source'>source</a><br>
+
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L1186-L1211' class='documenter-source'>source</a><br>
 
 <a id='Combinat.stirling1' href='#Combinat.stirling1'>#</a>
 **`Combinat.stirling1`** &mdash; *Function*.
@@ -710,7 +764,7 @@ julia> stirling1(50,big(10)) # give `big` second argument to avoid overflow
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L1082-L1119' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L1085-L1122' class='documenter-source'>source</a><br>
 
 <a id='Combinat.stirling2' href='#Combinat.stirling2'>#</a>
 **`Combinat.stirling2`** &mdash; *Function*.
@@ -745,7 +799,7 @@ julia> stirling2(50,big(10)) # give `big` second argument to avoid overflow
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L1135-L1165' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L1138-L1168' class='documenter-source'>source</a><br>
 
 <a id='Combinat.catalan-Tuple{Integer}' href='#Combinat.catalan-Tuple{Integer}'>#</a>
 **`Combinat.catalan`** &mdash; *Method*.
@@ -763,7 +817,7 @@ julia> catalan(big(50))
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L1574-L1584' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L1580-L1590' class='documenter-source'>source</a><br>
 
 <a id='Combinat.groupby' href='#Combinat.groupby'>#</a>
 **`Combinat.groupby`** &mdash; *Function*.
@@ -784,7 +838,7 @@ Dict{Int64,Vector{Symbol}} with 3 entries:
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L105-L120' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L123-L138' class='documenter-source'>source</a><br>
 
 
 `groupby(f::Function,l)`
@@ -801,7 +855,7 @@ Dict{Bool, Vector{Int64}} with 2 entries:
 Note:  keys of the result will  have type `Any` if `l`  is empty since I do not know how to access the return type of a function
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L127-L141' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L145-L159' class='documenter-source'>source</a><br>
 
 <a id='Combinat.tally' href='#Combinat.tally'>#</a>
 **`Combinat.tally`** &mdash; *Function*.
@@ -825,7 +879,7 @@ julia> tally("a tally test")
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L151-L171' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L169-L189' class='documenter-source'>source</a><br>
 
 <a id='Combinat.tally_sorted' href='#Combinat.tally_sorted'>#</a>
 **`Combinat.tally_sorted`** &mdash; *Function*.
@@ -834,10 +888,18 @@ julia> tally("a tally test")
 
 `tally_sorted(v)`
 
-`tally_sorted`  is like `tally`  but works only  for a sorted iterable. The point is that it is *very* fast.
+`tally_sorted`  is like `tally`  but works only  for a sorted iterable. The point is that it is very fast.
+
+```julia-repl
+julia> tally_sorted("aabbbeee")
+3-element Vector{Pair{Char, Int64}}:
+ 'a' => 2
+ 'b' => 3
+ 'e' => 3
+```
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L189-L194' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L226-L238' class='documenter-source'>source</a><br>
 
 <a id='Combinat.collectby' href='#Combinat.collectby'>#</a>
 **`Combinat.collectby`** &mdash; *Function*.
@@ -875,17 +937,17 @@ julia> collectby("JFMAMJJASOND",l)
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L217-L252' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L261-L296' class='documenter-source'>source</a><br>
 
 <a id='Combinat.unique_sorted!' href='#Combinat.unique_sorted!'>#</a>
 **`Combinat.unique_sorted!`** &mdash; *Function*.
 
 
 
-`unique_sorted!(v::Vector)` faster than unique! for sorted `v`
+`unique_sorted!(v::Vector)` many times faster than unique! for sorted `v`
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L267' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L311' class='documenter-source'>source</a><br>
 
 <a id='Combinat.intersect_sorted' href='#Combinat.intersect_sorted'>#</a>
 **`Combinat.intersect_sorted`** &mdash; *Function*.
@@ -897,7 +959,7 @@ julia> collectby("JFMAMJJASOND",l)
 intersects   `a`  and   `b`  assumed   to  be   both  sorted   and  without repetitions(and  their elements sortable).  This is many  times faster than `intersect`.
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L276-L282' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L320-L326' class='documenter-source'>source</a><br>
 
 <a id='Combinat.symdiff_sorted' href='#Combinat.symdiff_sorted'>#</a>
 **`Combinat.symdiff_sorted`** &mdash; *Function*.
@@ -909,7 +971,7 @@ intersects   `a`  and   `b`  assumed   to  be   both  sorted   and  without repe
 computes  the symmetric difference of `a` and `b` assumed to be both sorted and  without  repetitions  (and  their  elements  sortable).  The result is sorted,  so may differ  from `symdiff`; this  function is many times faster than `symdiff`.
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L330-L337' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L374-L381' class='documenter-source'>source</a><br>
 
 <a id='Combinat.union_sorted' href='#Combinat.union_sorted'>#</a>
 **`Combinat.union_sorted`** &mdash; *Function*.
@@ -921,7 +983,7 @@ computes  the symmetric difference of `a` and `b` assumed to be both sorted and 
 computes  the union of  `a` and `b`  assumed to be  both sorted and without repetitions  (and their  elements sortable).  The result  is sorted, so may differ from `union`; this function is many times faster than `union`.
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L302-L308' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L346-L352' class='documenter-source'>source</a><br>
 
 <a id='Combinat.diagblocks' href='#Combinat.diagblocks'>#</a>
 **`Combinat.diagblocks`** &mdash; *Function*.
@@ -954,7 +1016,7 @@ julia> m[[1,4,2,3],[1,4,2,3]]
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L1587-L1617' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L1593-L1623' class='documenter-source'>source</a><br>
 
 <a id='Combinat.blocks-Tuple{AbstractMatrix}' href='#Combinat.blocks-Tuple{AbstractMatrix}'>#</a>
 **`Combinat.blocks`** &mdash; *Method*.
@@ -994,7 +1056,7 @@ julia> m[[1,3,5,2,4],[1,3,2,4]]
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L1634-L1670' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L1640-L1676' class='documenter-source'>source</a><br>
 
 <a id='Combinat.bernoulli' href='#Combinat.bernoulli'>#</a>
 **`Combinat.bernoulli`** &mdash; *Function*.
@@ -1020,7 +1082,7 @@ julia> bernoulli(50) # and they grow fairly fast
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L1898-L1919' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L1904-L1925' class='documenter-source'>source</a><br>
 
 <a id='Combinat.prime_residues' href='#Combinat.prime_residues'>#</a>
 **`Combinat.prime_residues`** &mdash; *Function*.
@@ -1036,7 +1098,7 @@ julia> [prime_residues(24)]
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L1830-L1837' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L1836-L1843' class='documenter-source'>source</a><br>
 
 <a id='Combinat.primitiveroot' href='#Combinat.primitiveroot'>#</a>
 **`Combinat.primitiveroot`** &mdash; *Function*.
@@ -1045,7 +1107,7 @@ julia> [prime_residues(24)]
 
 `primitiveroot(m::Integer)`   a   primitive   root,   that   is  generating multiplicatively  `mod.  m`  the  `prime_residues(m)`. The function returns `nothing` if there is no primitive root `mod. m`.
 
-A  primitive root exists if `m` is euqal to `4` or `p^a` or `2p^a` for `p` prime>2.
+A  primitive root exists if `m` is equal to `4` or `p^a` or `2p^a` for `p` prime>2.
 
 ```julia-repl
 julia> primitiveroot(23)
@@ -1053,7 +1115,7 @@ julia> primitiveroot(23)
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L1847-L1859' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L1853-L1865' class='documenter-source'>source</a><br>
 
 <a id='Combinat.moebius' href='#Combinat.moebius'>#</a>
 **`Combinat.moebius`** &mdash; *Function*.
@@ -1076,5 +1138,5 @@ julia> moebius.(1:6)
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/d53fdee25aa00a2afe071926d76778572e767da7/src/Combinat.jl#L1874-L1890' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/Combinat.jl/blob/719028b9c89d9f4d772102d9e86b9c5b278dcec0/src/Combinat.jl#L1880-L1896' class='documenter-source'>source</a><br>
 
