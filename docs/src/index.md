@@ -22,6 +22,7 @@ gcd_partitions
 conjugate_partition
 dominates
 tableaux
+semistandard_tableaux
 robinson_schensted
 bell
 stirling1

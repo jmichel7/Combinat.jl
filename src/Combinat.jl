@@ -42,6 +42,7 @@ some functions on partitions and tableaux:
 [`conjugate_partition`](@ref),
 [`dominates`](@ref),
 [`tableaux`](@ref),
+[`semistandard_tableaux`](@ref),
 [`robinson_schensted`](@ref)
 
 counting functions:
@@ -113,7 +114,7 @@ export Combinations, combinations, ncombinations,
   Partitions, partitions, npartitions, partition_tuples, npartition_tuples, 
   Compositions, compositions, ncompositions, multisets, nmultisets, 
   lcm_partitions, gcd_partitions, conjugate_partition, dominates, tableaux,
-    robinson_schensted,
+  semistandard_tableaux,  robinson_schensted,
   bell, stirling1, stirling2, catalan, bernoulli,
   groupby, tally, tally_sorted, collectby, unique_sorted!, intersect_sorted,
   union_sorted, symdiff_sorted, blocks, diagblocks, prime_residues, 
@@ -1792,6 +1793,47 @@ function inner_tableaux(S)
 end
 
 tableaux(S::Vector{<:Integer})=first.(tableaux([S]))
+
+"""
+`semistandard_tableaux(λ,c)`
+
+`c`  should be  a non-decreasing  list and  `λ` a partition of `length(c)`.
+Returns  the list of semi_standard tableaux with shape `λ` and content `c`,
+that is a filling of the young diagram of `λ` with the elements of `c` such
+that they increase down the columns and do not decrease across the rows.
+```julia-repl
+julia> semistandard_tableaux([3,2,1],[1,2,2,3,4,5])
+8-element Vector{Vector{Vector{Int64}}}:
+ [[1, 2, 2], [3, 4], [5]]
+ [[1, 2, 2], [3, 5], [4]]
+ [[1, 2, 3], [2, 4], [5]]
+ [[1, 2, 3], [2, 5], [4]]
+ [[1, 2, 4], [2, 3], [5]]
+ [[1, 2, 5], [2, 3], [4]]
+ [[1, 2, 4], [2, 5], [3]]
+ [[1, 2, 5], [2, 4], [3]]
+```
+"""
+function semistandard_tableaux(shape,content,front=nothing)
+  if isnothing(front) 
+    front=fill(1,length(shape))
+  end
+  if isempty(content) return [[fill(0,s) for s in shape]] end
+  e=content[1]
+  res=Vector{Vector{Int}}[]
+  for (row,col) in enumerate(front)
+    if col>shape[row] || (row>1 && front[row-1]<=col) continue end
+    front[row]+=1
+    for t in semistandard_tableaux(shape,content[2:end],front)
+       if row==length(shape) || col>shape[row+1] || e<t[row+1][col]
+          t[row][col]=e
+          push!(res,t)
+       end
+    end
+    front[row]-=1
+  end
+  unique!(res)
+end
 
 """
 `robinson_schensted(p::AbstractVector{<:Integer})`
