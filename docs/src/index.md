@@ -1,17 +1,9 @@
-
 ```@meta
 CurrentModule = Combinat
 ```
 # Combinat
 
 Documentation for [Combinat](https://github.com/jmichel7/Combinat.jl).
-
-```@index
-```
-
-```@contents
-Depth=3
-```
 
 ```@docs
 Combinat

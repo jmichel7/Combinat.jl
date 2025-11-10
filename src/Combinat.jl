@@ -11,12 +11,12 @@ Classical enumerations:
 [`arrangements`](@ref),
 [`permutations`](@ref),
 [`partitions`](@ref),
-[`partition_tuples`](@ref),
 [`compositions`](@ref),
+[`partition_tuples`](@ref),
 [`multisets`](@ref)
 
-some  of them are  implemented by iterators,  which have the  same name but
-capitalized.  This  allows  to  do  itemwise  computations  on  very  large
+the  first five of them  are implemented by iterators,  which have the same
+name but capitalized. This allows to do itemwise computations on very large
 enumerations without allocating memory:
 
 [`Combinations`](@ref),
