@@ -1,4 +1,14 @@
-# Combinat
+
+```@meta
+CurrentModule = Combinat
+```
+# Combinat2
+
+Documentation for [Combinat](https://github.com/jmichel7/Combinat.jl).
+
+```@index
+```
+
 ```@contents
 Depth=3
 ```
