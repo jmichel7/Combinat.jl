@@ -2,7 +2,7 @@
 ```@meta
 CurrentModule = Combinat
 ```
-# Combinat2
+# Combinat
 
 Documentation for [Combinat](https://github.com/jmichel7/Combinat.jl).
 
