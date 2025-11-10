@@ -67,6 +67,6 @@ jobs:
         shell: julia --project=docs --color=yes {0}
         run: |
           using Documenter: DocMeta, doctest
-          using Combinat2
-          DocMeta.setdocmeta!(Combinat2, :DocTestSetup, :(using Combinat2); recursive=true)
-          doctest(Combinat2)
+          using Combinat
+          DocMeta.setdocmeta!(Combinat, :DocTestSetup, :(using Combinat); recursive=true)
+          doctest(Combinat)
