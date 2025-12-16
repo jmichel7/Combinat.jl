@@ -30,6 +30,10 @@ bell
 stirling1
 stirling2
 catalan(::Integer)
+bernoulli
+prime_residues
+primitiveroot
+moebius
 groupby
 tally
 tally_sorted
@@ -40,8 +44,4 @@ symdiff_sorted
 union_sorted
 diagblocks
 blocks(m::AbstractMatrix)
-bernoulli
-prime_residues
-primitiveroot
-moebius
 ```
