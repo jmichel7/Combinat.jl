@@ -31,8 +31,8 @@ functions to count enumerations without computing them:
 `narrangements`,
 `npermutations`,
 `npartitions`,
-`npartition_tuples`,
 `ncompositions`,
+`npartition_tuples`,
 `nmultisets`
 
 some functions on partitions and tableaux:
