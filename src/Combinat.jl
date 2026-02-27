@@ -201,7 +201,7 @@ function tally(v::AbstractArray;dict=false)
   end
 end
 
-tally(v::AbstractRange;k...)=v.=>1
+tally(v::AbstractRange;_...)=v.=>1
 
 tally(v;k...)=tally(collect(v);k...) # for iterables
 
@@ -470,7 +470,7 @@ end
   s[v], v
 end
 
-Base.eltype(x::Combinations{T}) where T=Vector{T}
+Base.eltype(::Combinations{T}) where T=Vector{T}
 Base.IteratorSize(::Type{Combinations{T}}) where T=Base.SizeUnknown()
 Base.show(io::IO,x::Combinations)=print(io,"Combinations(",vcat(fill.(x.s,x.m)...),",",x.k,")")
 
@@ -621,7 +621,7 @@ permutations(v)=collect(Permutations(v))
 "`Permutations` is an iterator for `permutations`"
 struct Permutations{T}
   v::Vector{T}
-  Permutations(v::AbstractVector{T};srt=true) where T =new{T}(srt ? sort(v) : v)
+  Permutations(v::AbstractVector{T};check=true) where T =new{T}(check ? sort(v) : v)
 end
 
 Permutations(n::Int)=Permutations(1:n)
@@ -629,7 +629,7 @@ Base.show(io::IO,x::Permutations)=print(io,"Permutations(",x.v,")")
 
 function Base.length(p::Permutations)
   cnt=factorial(length(p.v))
-  for (e,c) in Tally_sorted(p.v)
+  for (_,c) in Tally_sorted(p.v)
     cnt=div(cnt,factorial(c)) 
   end
   cnt
@@ -663,7 +663,7 @@ end
 #--------------------- arrangements -------------------
 "`Arrangements` is an iterator for `arrangements`"
 Arrangements(mset,k)=(w for v in Combinations(mset,k) 
-                        for w in Permutations(v;srt=false))
+                        for w in Permutations(v;check=false))
 
 Arrangements(mset::AbstractVector)=(w for k in 0:length(mset) 
                                       for w in Arrangements(mset,k))
@@ -779,7 +779,7 @@ struct Partitions{T<:Integer}
   n::T
 end
 
-Base.eltype(x::Partitions{T}) where T =Vector{T}
+Base.eltype(::Partitions{T}) where T =Vector{T}
 Base.IteratorSize(::Type{Partitions{T}}) where T=Base.SizeUnknown()
 Base.show(io::IO,x::Partitions)=print(io,"Partitions(",x.n,")")
 
@@ -807,7 +807,7 @@ struct PartitionsK
 end
 
 Partitions(n,k)=PartitionsK(n,k)
-Base.eltype(x::PartitionsK)=Vector{Int}
+Base.eltype(::PartitionsK)=Vector{Int}
 Base.IteratorSize(::Type{PartitionsK})=Base.SizeUnknown()
 Base.show(io::IO,x::PartitionsK)=print(io,"Partitions(",x.n,",",x.k,")")
 
@@ -1271,8 +1271,8 @@ julia> partition_tuples(3,2)
 """
 function partition_tuples(n, r)
    if n==0 return [fill(Int[],r)] end
-   empty=(tup=[Int[] for i in 1:r], pos=fill(1,n-1))
-   pm=[typeof(empty)[] for i in 1:n-1]
+   empty=(tup=[Int[] for _ in 1:r], pos=fill(1,n-1))
+   pm=[typeof(empty)[] for _ in 1:n-1]
    for m in 1:div(n,2)
       for i in 1:r # the m-cycle in all possible places.
         t=map(copy,empty)
@@ -1494,7 +1494,6 @@ function msetdiff(a,b)
   la=length(a)
   lb=length(b)
   ai=bi=1
-  ri=0
   while ai<=la || bi<=lb
     if     ai>la break
     elseif bi>lb push!(res,a[ai]); ai+=1
@@ -1781,7 +1780,7 @@ julia> tableaux([2,2])
 tableaux(S)=inner_tableaux(copy.(S))
 function inner_tableaux(S)
   w=sum(sum,S)
-  if iszero(w) return [map(x->map(y->Int[],x),S)] end
+  if iszero(w) return [map(x->map(_->Int[],x),S)] end
   res=Vector{Vector{Vector{Int}}}[]
   for i in eachindex(S), p in eachindex(S[i])
     if iszero(S[i][p]) || (p<length(S[i]) && S[i][p+1]==S[i][p]) continue end
@@ -1886,7 +1885,7 @@ julia> [prime_residues(24)]
 function prime_residues(n)
   if n==1 return [0] end
   pp=trues(n) # use a sieve to go fast
-  for (p,np) in eachfactor(n)
+  for (p,_) in eachfactor(n)
     pp[p:p:n].=false
   end
   (1:n)[pp]
@@ -1937,8 +1936,7 @@ julia> moebius.(1:6)
 ```
 """
 function moebius(n::Integer)
-  m(p,e)=p==0 ? 0 : e==1 ? -1 : 0
-  reduce(*, m(p, e) for (p, e) in eachfactor(n) if p ≥ 0; init=1)
+  prod(ifelse(e==1 && p!=0,-1,0) for (p, e) in eachfactor(n);init=1)
 end
 
 const bern=Rational{BigInt}[-1//2]
