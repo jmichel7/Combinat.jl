@@ -76,7 +76,7 @@ matrix blocks:
 [`diagblocks`](@ref)
 
 Have  a  look  at  the  individual  docstrings  and  enjoy (any feedback is
-welcome).  
+welcome).
 
 After  writing  most  of  this  module,  I  became  aware  of  the  package
 `Combinatorics`  which has a  considerable overlap. However  there are some
@@ -108,16 +108,16 @@ is `Combinat.arrangements`. I would welcome discussions with the authors of
 this respect.
 """
 module Combinat
-export Combinations, combinations, ncombinations, 
-  Arrangements, arrangements, narrangements, 
+export Combinations, combinations, ncombinations,
+  Arrangements, arrangements, narrangements,
   Permutations, permutations, npermutations,
-  Partitions, partitions, npartitions, partition_tuples, npartition_tuples, 
-  Compositions, compositions, ncompositions, multisets, nmultisets, 
+  Partitions, partitions, npartitions, partition_tuples, npartition_tuples,
+  Compositions, compositions, ncompositions, multisets, nmultisets,
   lcm_partitions, gcd_partitions, conjugate_partition, dominates, tableaux,
   semistandard_tableaux,  robinson_schensted,
   bell, stirling1, stirling2, catalan, bernoulli,
   groupby, tally, tally_sorted, collectby, unique_sorted!, intersect_sorted,
-  union_sorted, symdiff_sorted, blocks, diagblocks, prime_residues, 
+  union_sorted, symdiff_sorted, blocks, diagblocks, prime_residues,
   primitiveroot, moebius
 
 #--------------------- Structural manipulations -------------------
@@ -166,6 +166,8 @@ function groupby(f::Function,l)
   end
   res
 end
+#julia> @btime groupby(x->x%3,v) setup=(v=rand(1:10,100));
+#  3.323 μs (113 allocations: 5.78 KiB)
 
 """
 `tally(v;dict=false)`
@@ -191,7 +193,7 @@ julia> tally("a tally test")
 function tally(v::AbstractArray;dict=false)
   if dict
     res=Dict{eltype(v),Int}()
-    for n in v 
+    for n in v
       if haskey(res,n) res[n]+=1
       else res[n]=1
       end
@@ -200,6 +202,10 @@ function tally(v::AbstractArray;dict=false)
   else tally_sorted(issorted(v) ? v : sort(v))
   end
 end
+#julia> @btime tally(v) setup=(v=rand(1:10,100));
+#  394.985 ns (6 allocations: 1.92 KiB)
+#julia> @btime tally(v;dict=true) setup=(v=rand(1:10,100));
+#  1.745 μs (6 allocations: 656 bytes)
 
 tally(v::AbstractRange;_...)=v.=>1
 
@@ -217,7 +223,7 @@ Base.eltype(::Type{Tally_sorted{T}}) where T=Pair{T,Int}
     if i==length(t.v) || t.v[i]!=t.v[i+1] return (t.v[i]=>i,i+1) end
   end
 end
-    
+
 @inline function Base.iterate(t::Tally_sorted,j)
   for i in j:length(t.v)
     if i==length(t.v) || t.v[i]!=t.v[i+1] return (t.v[i]=>i-j+1,i+1) end
@@ -308,8 +314,18 @@ function collectby(f,v)
   end
   res
 end
+#julia> @btime collectby(x->x%3,v) setup=(v=rand(1:10,100));
+#  1.614 μs (18 allocations: 4.92 KiB)
 
-"`unique_sorted!(v::Vector)` many times faster than unique! for sorted `v`"
+"""
+`unique_sorted!(v::Vector)` is many times faster than `unique!` for sorted `v`
+```julia-rep1
+julia> @btime unique_sorted!(sort(v)) setup=(v=rand(1:10,100));
+  273.938 ns (3 allocations: 1.02 KiB)
+julia> @btime unique(v) setup=(v=rand(1:10,100));
+  844.686 ns (7 allocations: 816 bytes)
+```
+"""
 function unique_sorted!(v::Vector)
   i=1
 @inbounds  for j in 2:length(v)
@@ -319,11 +335,20 @@ function unique_sorted!(v::Vector)
 end
 
 """
-`intersect_sorted(a,b)` 
+`intersect_sorted(a,b)`
 
 intersects   `a`  and   `b`  assumed   to  be   both  sorted   and  without
 repetitions(and  their elements sortable).  This is many  times faster than
 `intersect`.
+```julia-rep1
+julia> a=rand(1:100,30);b=rand(1:100,30);
+
+julia> @btime intersect_sorted(sort(\$a),sort(\$b))
+  449.142 ns (7 allocations: 1.08 KiB)
+
+julia> @btime intersect(\$a,\$b)
+  1.465 μs (11 allocations: 1.95 KiB)
+```
 """
 function intersect_sorted(a,b)
   if !issorted(a) || !issorted(b) error("arguments should be sorted") end
@@ -334,7 +359,7 @@ function intersect_sorted(a,b)
     ai,stata=sa
     bi,statb=sb
     if isless(ai,bi) sa=iterate(a,stata)
-    elseif ai==bi 
+    elseif ai==bi
       if isempty(res)||ai!=res[end] push!(res,ai) end
       sa=iterate(a,stata)
       sb=iterate(b,statb)
@@ -345,11 +370,20 @@ function intersect_sorted(a,b)
 end
 
 """
-`union_sorted(a,b)` 
+`union_sorted(a,b)`
 
 computes  the union of  `a` and `b`  assumed to be  both sorted and without
 repetitions  (and their  elements sortable).  The result  is sorted, so may
 differ from `union`; this function is many times faster than `union`.
+```julia-rep1
+julia> a=rand(1:100,30);b=rand(1:100,30);
+
+julia> @btime union_sorted(sort(\$a),sort(\$b));
+  551.478 ns (7 allocations: 1.08 KiB)
+
+julia> @btime union(\$a,\$b);
+  1.665 μs (10 allocations: 1.45 KiB)
+```
 """
 function union_sorted(a,b)
   if !issorted(a) || !issorted(b) error("arguments should be sorted") end
@@ -372,13 +406,55 @@ function union_sorted(a,b)
   resize!(res,ri)
 end
 
+function union_sorted2(a,b) # slower for now
+  if !issorted(a) || !issorted(b) error("arguments should be sorted") end
+  res=promote_type(eltype(a),eltype(b))[]
+  sa=iterate(a)
+  sb=iterate(b)
+  while sa!==nothing && sb!==nothing
+    ai,stata=sa
+    bi,statb=sb
+    if isless(ai,bi)
+      if isempty(res)||ai!=res[end] push!(res,ai) end
+      sa=iterate(a,stata)
+    elseif ai==bi
+      if isempty(res)||ai!=res[end] push!(res,ai) end
+      sa=iterate(a,stata)
+      sb=iterate(b,statb)
+    else
+      if isempty(res)||bi!=res[end] push!(res,bi) end
+      sb=iterate(b,statb)
+    end
+  end
+  while sa!==nothing
+    ai,stata=sa
+    if isempty(res)||ai!=res[end] push!(res,ai) end
+    sa=iterate(a,stata)
+  end
+  while sb!==nothing
+    bi,statb=sb
+    if isempty(res)||bi!=res[end] push!(res,bi) end
+    sb=iterate(b,statb)
+  end
+  res
+end
+
 """
-`symdiff_sorted(a,b)` 
+`symdiff_sorted(a,b)`
 
 computes  the symmetric difference of `a` and `b` assumed to be both sorted
 and  without  repetitions  (and  their  elements  sortable).  The result is
 sorted,  so may differ  from `symdiff`; this  function is many times faster
 than `symdiff`.
+```julia_rep1
+julia> a=rand(1:100,30);b=rand(1:100,30);
+
+julia> @btime symdiff_sorted(sort(\$a),sort(\$b));
+  595.834 ns (7 allocations: 1.08 KiB)
+
+julia> @btime symdiff(\$a,\$b);
+  2.675 μs (22 allocations: 3.23 KiB)
+```
 """
 function symdiff_sorted(a,b)
   if !issorted(a) || !issorted(b) error("arguments should be sorted") end
@@ -399,6 +475,40 @@ function symdiff_sorted(a,b)
     end
   end
   resize!(res,ri)
+end
+
+function symdiff_sorted2(a,b) # slower for now
+  if !issorted(a) || !issorted(b) error("arguments should be sorted") end
+  res=promote_type(eltype(a),eltype(b))[]
+  sa=iterate(a)
+  sb=iterate(b)
+  eq=nothing
+  while sa!==nothing && sb!==nothing
+    ai,stata=sa
+    bi,statb=sb
+    if isless(ai,bi)
+      if (isempty(res)|| ai!=res[end])&&ai!=eq push!(res,ai) end
+      sa=iterate(a,stata)
+    elseif ai==bi
+      eq=ai
+      sa=iterate(a,stata)
+      sb=iterate(b,statb)
+    else
+      if (isempty(res)||bi!=res[end])&&bi!=eq push!(res,bi) end
+      sb=iterate(b,statb)
+    end
+  end
+  while sa!==nothing
+    ai,stata=sa
+    if (isempty(res)||ai!=res[end])&&ai!=eq push!(res,ai) end
+    sa=iterate(a,stata)
+  end
+  while sb!==nothing
+    bi,statb=sb
+    if (isempty(res)||bi!=res[end])&&bi!=eq push!(res,bi) end
+    sb=iterate(b,statb)
+  end
+  res
 end
 
 #--------------------- combinations -------------------
@@ -462,7 +572,7 @@ end
   u=1
   j=0
   for l in 1:k
-    if j<m[u] j+=1 
+    if j<m[u] j+=1
     else u+=1;j=1
     end
     v[l]=u
@@ -485,14 +595,14 @@ Base.show(io::IO,x::Combinations)=print(io,"Combinations(",vcat(fill.(x.s,x.m)..
       if j>=m[u] i-=1;continue end
       j=0
       for l in i:k
-        if j<m[u] j+=1 
+        if j<m[u] j+=1
         else u+=1;j=1
         end
         v[l]=u
       end
       return s[v],v
       i=k;continue
-    else i-=1;continue 
+    else i-=1;continue
     end
   end
 end
@@ -554,6 +664,8 @@ The  combinations  are  implemented  by  an iterator [`Combinations`](@ref)
 which can enumerate the combinations of a large multiset.
 """
 combinations(x...;kw...)=collect(Combinations(x...;kw...))
+#julia> @btime combinations(1:10,5);
+#  14.888 μs (518 allocations: 31.76 KiB)
 
 @doc (@doc combinations) ncombinations
 ncombinations(mset;kw...)=prod(1 .+last.(tally(mset;kw...)))
@@ -582,7 +694,7 @@ end
 
 in  the first  form, the  elements of  `v` must  be sortable.  The function
 returns  in lexicographic  order the  distinct permutations  of the  set or
-multiset `v`.  This   is  the  same   as  `arrangements(v,length(v))`.  
+multiset `v`.  This   is  the  same   as  `arrangements(v,length(v))`.
 
 The second form is the same as `permutations(1:n)`.
 
@@ -611,12 +723,14 @@ julia> permutations([:b,:b,:a,:a])
  [:b, :a, :a, :b]
  [:b, :a, :b, :a]
  [:b, :b, :a, :a]
- 
+
 julia> npermutations([:b,:b,:a,:a])
 6
 ```
 """
 permutations(v)=collect(Permutations(v))
+#julia> @btime permutations(5);
+#  5.575 μs (242 allocations: 12.27 KiB)
 
 "`Permutations` is an iterator for `permutations`"
 struct Permutations{T}
@@ -630,7 +744,7 @@ Base.show(io::IO,x::Permutations)=print(io,"Permutations(",x.v,")")
 function Base.length(p::Permutations)
   cnt=factorial(length(p.v))
   for (_,c) in Tally_sorted(p.v)
-    cnt=div(cnt,factorial(c)) 
+    cnt=div(cnt,factorial(c))
   end
   cnt
 end
@@ -640,9 +754,7 @@ npermutations(v)=length(Permutations(v))
 
 Base.eltype(::Type{Permutations{T}}) where T =Vector{T}
 
-function Base.iterate(P::Permutations)
-  (P.v,P.v)
-end
+Base.iterate(P::Permutations)=(P.v,P.v)
 
 @inline function Base.iterate(P::Permutations,p)
   n=length(p)
@@ -662,10 +774,10 @@ end
 end
 #--------------------- arrangements -------------------
 "`Arrangements` is an iterator for `arrangements`"
-Arrangements(mset,k)=(w for v in Combinations(mset,k) 
+Arrangements(mset,k)=(w for v in Combinations(mset,k)
                         for w in Permutations(v;check=false))
 
-Arrangements(mset::AbstractVector)=(w for k in 0:length(mset) 
+Arrangements(mset::AbstractVector)=(w for k in 0:length(mset)
                                       for w in Arrangements(mset,k))
 
 """
@@ -725,7 +837,7 @@ function narr(tt,k::Int)::Union{Int,BigInt}
   if k<=0 return 1 end
   n=sum(tt)
   if n>20 n=big(n) end
-  if k>n 0 
+  if k>n 0
   elseif k==n div(factorial(n),prod(factorial(i) for i in tt))
   elseif all(==(1),tt) prod(n-k+1:n)
   else sum(binomial(k,i)*narr(Iterators.drop(tt,1),k-i) for i in 0:first(tt))
@@ -737,7 +849,7 @@ function narrangements(mset,k)
   tt=sort!(last.(tally(mset)),rev=true)
   narr(tt,k)
 end
-  
+
 function narrangements(mset)
   tt=sort!(last.(tally(mset)),rev=true)
   sum(narr(tt,k) for k in 0:length(mset))
@@ -884,6 +996,8 @@ which can be used to enumerate the partitions of a large number.
 """
 partitions(n::Integer)=collect(Partitions(n))
 partitions(n::Integer,k::Integer)=collect(Partitions(n,k))
+#julia> @btime partitions(10);
+#  2.002 μs (90 allocations: 6.05 KiB)
 
 @doc (@doc partitions) npartitions
 function npartitions(n)
@@ -916,7 +1030,7 @@ function npartitions(n,k)
 end
 
 """
-`partitions(n::Integer,set::AbstractVector[,k])`, `npartitions(n::Integer,set::AbstractVector[,k])`   
+`partitions(n::Integer,set::AbstractVector[,k])`, `npartitions(n::Integer,set::AbstractVector[,k])`
 
 returns  the list  of partitions  of `n`  (with `k`  parts if `k` is given)
 restricted  to have parts in `set`. `npartitions` gives (faster) the number
@@ -937,7 +1051,7 @@ julia> partitions(17,[10,5,2])
 julia> npartitions(17,[10,5,2],3) # pay with 3 coins
 1
 
-julia> partitions(17,[10,5,2],3) 
+julia> partitions(17,[10,5,2],3)
 1-element Vector{Vector{Int64}}:
  [10, 5, 2]
 ```
@@ -1082,6 +1196,8 @@ end
 function partitions(set::AbstractVector)
   vcat((partitions(set,i) for i in eachindex(set))...)
 end
+#julia> @btime partitions(1:4)
+#  4.096 μs (243 allocations: 9.09 KiB)
 
 """
 `stirling1(n,k)`
@@ -1155,7 +1271,7 @@ julia> stirling2.(4,0:4)  # Knuth calls this the trademark of S₂
 
 julia> [stirling2(i,j) for i in 0:6, j in 0:6] # similar to Pascal's triangle
 7×7 Matrix{Int64}:
- 1  0   0   0   0   0  0 
+ 1  0   0   0   0   0  0
  0  1   0   0   0   0  0
  0  1   1   0   0   0  0
  0  1   3   1   0   0  0
@@ -1242,6 +1358,8 @@ function partition_tuples2(n,r)
   partition_tuples(list,n,r,partitions.(0:n))
   list
 end
+#julia> @btime Combinat.partition_tuples2(3,3);
+#  2.591 μs (93 allocations: 5.09 KiB)
 
 # bad implementation but which is ordered as GAP3; needed for
 # compatibility with Chevie data library (specially type B2)
@@ -1303,6 +1421,8 @@ function partition_tuples(n, r)
    end
    res
 end
+#julia> @btime partition_tuples(3,3);
+#  3.816 μs (170 allocations: 8.23 KiB)
 
 @doc (@doc partition_tuples) npartition_tuples
 function npartition_tuples(n,k)
@@ -1331,7 +1451,7 @@ function Base.length(c::Compositions)
 end
 
 function Base.iterate(c::Compositions)
-  s=c.n-c.k*c.min 
+  s=c.n-c.k*c.min
   if s<0 return nothing end
   u=fill(c.min,c.k);u[end]=s+c.min
   u,copy(u)
@@ -1340,7 +1460,7 @@ end
 @inline function Base.iterate(c::Compositions,u)
   for i in length(u):-1:2
     s=sum(@view u[i:end])-1-(length(u)-i)*c.min
-    if s>=c.min 
+    if s>=c.min
       u[i-1]+=1;u[end]=s;u[i:end-1].=c.min
       return u,copy(u)
     end
@@ -1403,10 +1523,12 @@ which can be used to enumerate the compositions of a large number.
 compositions(n::T,k::Integer;min=1)where T<:Integer=collect(Compositions(n,k;min))
 
 compositions(n::T;min=1) where T<:Integer=collect(Compositions(n;min))
+#julia> @btime compositions(6)
+#  1.592 μs (86 allocations: 3.97 KiB)
 
 ncompositions(n,k;min=1)=length(Compositions(n,k;min))
 
-ncompositions(n;min=1)=min==1 ? (n==0 ? 1 : 2^(n-1)) : 
+ncompositions(n;min=1)=min==1 ? (n==0 ? 1 : 2^(n-1)) :
   sum(k->ncompositions(n,k;min),1:div(n,min))
 
 @doc (@doc compositions) ncompositions
@@ -1453,6 +1575,8 @@ function multisets(A,i)
   multisets(res,A,i,1)
   res
 end
+#julia> @btime multisets(1:4,3)
+#  916.294 ns (44 allocations: 2.08 KiB)
 
 function multisets(res,A,i,j)
   if i==0 return end
@@ -1462,7 +1586,7 @@ function multisets(res,A,i,j)
     multisets(res,A,i-1,k)
   end
 end
-    
+
 @doc (@doc multisets) nmultisets
 nmultisets(set,k)=binomial(length(set)+k-1,k)
 
@@ -1530,7 +1654,7 @@ by the arguments.
 julia> lcm_partitions([[1,2],[3,4],[5,6]],[[1],[2,5],[3],[4],[6]])
 2-element Vector{Vector{Int64}}:
  [1, 2, 5, 6]
- [3, 4]      
+ [3, 4]
 ```
 """
 function lcm_partitions(arg...)
@@ -1685,10 +1809,10 @@ function blocks(M::AbstractMatrix)
         else union!(comps[q][1], l)
         end
       elseif q===nothing union!(comps[p][2], c)
-      elseif p==q 
+      elseif p==q
         union!(comps[p][1], l)
         union!(comps[p][2], c)
-      else 
+      else
         union!(comps[p][1],comps[q][1])
         union!(comps[p][2],comps[q][2])
         deleteat!(comps,q)
@@ -1814,7 +1938,7 @@ julia> semistandard_tableaux([3,2,1],[1,2,2,3,4,5])
 ```
 """
 function semistandard_tableaux(shape,content,front=nothing)
-  if isnothing(front) 
+  if isnothing(front)
     front=fill(1,length(shape))
   end
   if isempty(content) return [[fill(0,s) for s in shape]] end
@@ -1914,7 +2038,7 @@ function primitiveroot(m::Integer)
   if nf>1 && (!(2 in keys(f)) || f[2]>1) return nothing end
   if nf==1 && (2 in keys(f)) && f[2]>2 return nothing end
   p=totient(m) # the Euler φ
-  1+findfirst(x->powermod(x,p,m)==1 && 
+  1+findfirst(x->powermod(x,p,m)==1 &&
      all(d->powermod(x,div(p,d),m)!=1,keys(factor(p))),2:m-1)::Int
 end
 
@@ -1949,7 +2073,7 @@ k}B_k)/(n+1)``.  `Bₙ/n!` is the coefficient of  `xⁿ` in the power series of
 `x/(eˣ-1)`.  Except for `B₁=-1/2` the Bernoulli numbers for odd indices are
 zero.
 
-```julia-repl 
+```julia-repl
 julia> bernoulli(4)
 -1//30
 
