@@ -111,7 +111,8 @@ module Combinat
 export Combinations, combinations, ncombinations,
   Arrangements, arrangements, narrangements,
   Permutations, permutations, npermutations,
-  Partitions, partitions, npartitions, partition_tuples, npartition_tuples,
+  Partitions, partitions, npartitions,
+  partition_tuples, npartition_tuples,
   Compositions, compositions, ncompositions, multisets, nmultisets,
   lcm_partitions, gcd_partitions, conjugate_partition, dominates, tableaux,
   semistandard_tableaux,  robinson_schensted,
@@ -128,13 +129,13 @@ return  a  `Dict`  grouping  elements  of  collection  `l` according to the
 corresponding  values in the collection `v`,  which should have same length
 as `l`, and whose elements must be hashable.
 
-```julia-rep1
+```julia-repl
 julia> groupby([31,28,31,30,31,30,31,31,30,31,30,31],
   [:Jan,:Feb,:Mar,:Apr,:May,:Jun,:Jul,:Aug,:Sep,:Oct,:Nov,:Dec])
-Dict{Int64,Vector{Symbol}} with 3 entries:
-  31 => Symbol[:Jan, :Mar, :May, :Jul, :Aug, :Oct, :Dec]
-  28 => Symbol[:Feb]
-  30 => Symbol[:Apr, :Jun, :Sep, :Nov]
+Dict{Int64, Vector{Symbol}} with 3 entries:
+  30 => [:Apr, :Jun, :Sep, :Nov]
+  28 => [:Feb]
+  31 => [:Jan, :Mar, :May, :Jul, :Aug, :Oct, :Dec]
 ```
 """
 function groupby(v,l)
@@ -152,8 +153,8 @@ taken by function `f` on them. The values of `f` must be hashable.
 ```julia-repl
 julia> groupby(iseven,1:10)
 Dict{Bool, Vector{Int64}} with 2 entries:
-  0 => [1, 3, 5, 7, 9]
   1 => [2, 4, 6, 8, 10]
+  0 => [1, 3, 5, 7, 9]
 ```
 Note:  keys of the result will  have type `Any` if `l`  is empty since I do
 not know how to access the return type of a function
@@ -948,15 +949,15 @@ end
 """
 `partitions(n::Integer[,k])`, `npartitions(n::Integer[,k])`
 
-`partitions`  returns in lexicographic order the partitions (with `k` parts
-if  `k`  is  given)  of  the  positive  integer `n` . `npartitions` returns
-(faster) the number of partitions.
+`partitions`  returns in lexicographic order the partitions of the positive
+integer  `n` (in `k` parts if `k` is given). `npartitions` returns (faster)
+the number of partitions.
 
 There are approximately `exp(π√(2n/3))/(4√3 n)` partitions of `n`.
 
-A   *partition*  is   a  decomposition   `n=p₁+p₂+…+pₖ`  in  integers  with
-`p₁≥p₂≥…≥pₖ>0`, and is represented by the vector `p=[p₁,p₂,…,pₖ]`. We write
-`p⊢n` to say that `p` is a partition of `n`.
+A  *partition* of  `n` in  `k` parts  is a  decomposition `n=p₁+p₂+…+pₖ` in
+integers   with   `p₁≥p₂≥…≥pₖ>0`,   and   is   represented  by  the  vector
+`p=[p₁,p₂,…,pₖ]`. We write `p⊢n` to say that `p` is a partition of `n`.
 
 ```julia-repl
 julia> npartitions(7)
@@ -1143,13 +1144,17 @@ end
 """
 `partitions(set::AbstractVector[,k])`, `npartitions(set::AbstractVector[,k])`
 
-the  set of all unordered  partitions (in `k` sets  if `k` is given) of the
-set  `set` (a  collection without  repetitions). `npartitions`  returns the
-number of unordered partitions.
+the  list of all unordered partitions (in `k` multisets if `k` is given) of
+the multiset `set`. A multiset is a collection with possibly repetitions.
 
-An *unordered partition* of `set` is a set of pairwise disjoints sets whose
-union is equal to `set`, and is represented by a Vector of Vectors.
+An  unordered partition of a multiset is a collection of sub-multisets such
+that their union with multiplicities gives back `set`.
 
+If  `set`  has  repetitions  (that  is,  `allunique(set)==false`)  then the
+elements of `set` must be sortable.
+
+If  `set` has no  repetitions `npartitions` returns  (faster) the number of
+unordered partitions (otherwise it returns a wrong result).
 ```julia-repl
 julia> npartitions(1:3)
 5
@@ -1174,19 +1179,26 @@ julia> partitions(1:4,2)
  [[1, 3], [2, 4]]
  [[1, 4], [2, 3]]
  [[1], [2, 3, 4]]
+
+julia> partitions([1,1,2,2],2)
+4-element Vector{Vector{Vector{Int64}}}:
+ [[1, 1], [2, 2]]
+ [[1, 2], [1, 2]]
+ [[1, 1, 2], [2]]
+ [[1, 2, 2], [1]]
 ```
-Note  that `unique(sort.(partitions(mset[,k])))`  is a  version which works
-for a multiset `mset`.
 """
 function partitions(set::AbstractVector,k)
+  if !allunique(set) return partitionsmset(set,k) end
   res=Vector{Vector{eltype(set)}}[]
-  if length(set)<k return res end
+  if k>length(set) return res end
   if k==1 return [[collect(set)]] end
+  if k==length(set) return [map(x->[x],set)] end
   for p in partitions(set[1:end-1],k-1) push!(res,vcat(p,[[set[end]]])) end
   for p in partitions(set[1:end-1],k)
     for i in eachindex(p)
       u=copy(p)
-      u[i]=vcat(u[i],[set[end]])
+      u[i]=push!(copy(u[i]),set[end])
       push!(res,u)
     end
   end
@@ -1196,6 +1208,52 @@ end
 function partitions(set::AbstractVector)
   vcat((partitions(set,i) for i in eachindex(set))...)
 end
+
+# benchmark with `unique!(sort!.(partitions(mset[,k])))`
+function partitionsmset(mset::AbstractVector,k::Int)
+  mset=sort(mset)
+  [q  for p in Partitions(length(mset),k) 
+      for q in partitionsmset(mset,p)]
+end
+
+# partition mset in parts of lengths given by partition p of length(mset)
+function partitionsmset(mset::AbstractVector,p::AbstractVector{Int})
+  res=Vector{Vector{eltype(mset)}}[]
+  part=p[1];i=1
+  while true
+    i=i+1
+    if i>length(p) || p[i]!=p[1] break end
+  end
+  mult=i-1;p=@view p[i:end]
+  if isempty(p) append!(res,partitionsmseteq(mset,part,empty(mset)))
+  else
+    for m in Combinations(mset,part*mult)
+      res1=partitionsmseteq(m,part,empty(mset)) # everybody >emptyset
+      res2=partitionsmset(msetdiff(mset,m),p)
+      for i in res1, j in res2 push!(res,vcat(i,j)) end
+    end
+  end
+  res
+end
+
+# partition mset in parts all of length m (length(mset) multiple of m)
+function partitionsmseteq(mset::AbstractVector,m::Int,ge)
+  if length(mset)==m 
+    if mset>=ge return [[mset]]
+    else return Vector{typeof(mset)}[]
+    end
+  elseif m==1 return [map(x->[x],mset)]
+  end
+  res=Vector{typeof(mset)}[]
+  for c in Combinations(mset,m)
+    if c<ge continue end
+    for i in partitionsmseteq(msetdiff(mset,c),m,c)
+      push!(res,pushfirst!(i,c))
+    end
+  end
+  res
+end
+  
 #julia> @btime partitions(1:4)
 #  4.096 μs (243 allocations: 9.09 KiB)
 

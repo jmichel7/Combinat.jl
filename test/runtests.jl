@@ -8,20 +8,22 @@ function mytest(file::String,cmd::String,man::String)
   exec=replace(exec,r"^\s*"=>"")
   if exec==man return true end
   inds=collect(eachindex(exec))
-  i=inds[findfirst(i->i<=lastindex(man) && exec[i]!=man[i],inds)]
+  i=findfirst(i->i<=lastindex(man) && exec[i]!=man[i],inds)
+  if i==nothing i=ncodeunits(man)+1 else i=inds[i] end
   print("exec=$(repr(exec[i:end]))\nmanl=$(repr(man[i:end]))\n")
   false
 end
 @testset "Combinat.jl" begin
-@test mytest("Combinat.jl","groupby(iseven,1:10)","Dict{Bool, Vector{Int64}} with 2 entries:\n  0 => [1, 3, 5, 7, 9]\n  1 => [2, 4, 6, 8, 10]")
+@test mytest("Combinat.jl","groupby([31,28,31,30,31,30,31,31,30,31,30,31],\n  [:Jan,:Feb,:Mar,:Apr,:May,:Jun,:Jul,:Aug,:Sep,:Oct,:Nov,:Dec])","Dict{Int64, Vector{Symbol}} with 3 entries:\n  30 => [:Apr, :Jun, :Sep, :Nov]\n  28 => [:Feb]\n  31 => [:Jan, :Mar, :May, :Jul, :Aug, :Oct, :Dec]")
+@test mytest("Combinat.jl","groupby(iseven,1:10)","Dict{Bool, Vector{Int64}} with 2 entries:\n  1 => [2, 4, 6, 8, 10]\n  0 => [1, 3, 5, 7, 9]")
 @test mytest("Combinat.jl","tally(\"a tally test\")","7-element Vector{Pair{Char, Int64}}:\n ' ' => 2\n 'a' => 2\n 'e' => 1\n 'l' => 2\n 's' => 1\n 't' => 3\n 'y' => 1")
 @test mytest("Combinat.jl","tally_sorted(\"aabbbeee\")","3-element Vector{Pair{Char, Int64}}:\n 'a' => 2\n 'b' => 3\n 'e' => 3")
 @test mytest("Combinat.jl","l=[:Jan,:Feb,:Mar,:Apr,:May,:Jun,:Jul,:Aug,:Sep,:Oct,:Nov,:Dec];","nothing")
 @test mytest("Combinat.jl","collectby(x->first(string(x)),l)","8-element Vector{Vector{Symbol}}:\n [:Apr, :Aug]\n [:Dec]\n [:Feb]\n [:Jan, :Jun, :Jul]\n [:Mar, :May]\n [:Nov]\n [:Oct]\n [:Sep]")
 @test mytest("Combinat.jl","collectby(\"JFMAMJJASOND\",l)","8-element Vector{Vector{Symbol}}:\n [:Apr, :Aug]\n [:Dec]\n [:Feb]\n [:Jan, :Jun, :Jul]\n [:Mar, :May]\n [:Nov]\n [:Oct]\n [:Sep]")
-@test mytest("Combinat.jl","a=Combinat.Combinations(1:4);","nothing")
+@test mytest("Combinat.jl","a=Combinations(1:4);","nothing")
 @test mytest("Combinat.jl","collect(a)","16-element Vector{Vector{Int64}}:\n []\n [1]\n [2]\n [3]\n [4]\n [1, 2]\n [1, 3]\n [1, 4]\n [2, 3]\n [2, 4]\n [3, 4]\n [1, 2, 3]\n [1, 2, 4]\n [1, 3, 4]\n [2, 3, 4]\n [1, 2, 3, 4]")
-@test mytest("Combinat.jl","a=Combinat.Combinations([1,2,2,3,4,4],3)","Combinations([1, 2, 2, 3, 4, 4],3)")
+@test mytest("Combinat.jl","a=Combinations([1,2,2,3,4,4],3)","Combinations([1, 2, 2, 3, 4, 4],3)")
 @test mytest("Combinat.jl","collect(a)","10-element Vector{Vector{Int64}}:\n [1, 2, 2]\n [1, 2, 3]\n [1, 2, 4]\n [1, 3, 4]\n [1, 4, 4]\n [2, 2, 3]\n [2, 2, 4]\n [2, 3, 4]\n [2, 4, 4]\n [3, 4, 4]")
 @test mytest("Combinat.jl","ncombinations([1,2,2,3])","12")
 @test mytest("Combinat.jl","combinations([1,2,2,3])","12-element Vector{Vector{Int64}}:\n []\n [1]\n [2]\n [3]\n [1, 2]\n [1, 3]\n [2, 2]\n [2, 3]\n [1, 2, 2]\n [1, 2, 3]\n [2, 2, 3]\n [1, 2, 2, 3]")
@@ -48,6 +50,7 @@ end
 @test mytest("Combinat.jl","partitions(1:3)","5-element Vector{Vector{Vector{Int64}}}:\n [[1, 2, 3]]\n [[1, 2], [3]]\n [[1, 3], [2]]\n [[1], [2, 3]]\n [[1], [2], [3]]")
 @test mytest("Combinat.jl","npartitions(1:4,2)","7")
 @test mytest("Combinat.jl","partitions(1:4,2)","7-element Vector{Vector{Vector{Int64}}}:\n [[1, 2, 3], [4]]\n [[1, 2, 4], [3]]\n [[1, 2], [3, 4]]\n [[1, 3, 4], [2]]\n [[1, 3], [2, 4]]\n [[1, 4], [2, 3]]\n [[1], [2, 3, 4]]")
+@test mytest("Combinat.jl","partitions([1,1,2,2],2)","4-element Vector{Vector{Vector{Int64}}}:\n [[1, 1], [2, 2]]\n [[1, 2], [1, 2]]\n [[1, 1, 2], [2]]\n [[1, 2, 2], [1]]")
 @test mytest("Combinat.jl","stirling1.(4,0:4)","5-element Vector{Int64}:\n  0\n  6\n 11\n  6\n  1")
 @test mytest("Combinat.jl","[stirling1(n,k) for n in 0:6, k in 0:6]","7×7 Matrix{Int64}:\n 1    0    0    0   0   0  0\n 0    1    0    0   0   0  0\n 0    1    1    0   0   0  0\n 0    2    3    1   0   0  0\n 0    6   11    6   1   0  0\n 0   24   50   35  10   1  0\n 0  120  274  225  85  15  1")
 @test mytest("Combinat.jl","stirling1(50,big(10))","101623020926367490059043797119309944043405505380503665627365376")
@@ -81,8 +84,13 @@ end
 @test mytest("Combinat.jl","dominates([5,4],[4,4,1])","true")
 @test mytest("Combinat.jl","tableaux([[2,1],[1]])","8-element Vector{Vector{Vector{Vector{Int64}}}}:\n [[[1, 2], [3]], [[4]]]\n [[[1, 2], [4]], [[3]]]\n [[[1, 3], [2]], [[4]]]\n [[[1, 3], [4]], [[2]]]\n [[[1, 4], [2]], [[3]]]\n [[[1, 4], [3]], [[2]]]\n [[[2, 3], [4]], [[1]]]\n [[[2, 4], [3]], [[1]]]")
 @test mytest("Combinat.jl","tableaux([2,2])","2-element Vector{Vector{Vector{Int64}}}:\n [[1, 2], [3, 4]]\n [[1, 3], [2, 4]]")
+@test mytest("Combinat.jl","semistandard_tableaux([3,2,1],[1,2,2,3,4,5])","8-element Vector{Vector{Vector{Int64}}}:\n [[1, 2, 2], [3, 4], [5]]\n [[1, 2, 2], [3, 5], [4]]\n [[1, 2, 3], [2, 4], [5]]\n [[1, 2, 3], [2, 5], [4]]\n [[1, 2, 4], [2, 3], [5]]\n [[1, 2, 5], [2, 3], [4]]\n [[1, 2, 4], [2, 5], [3]]\n [[1, 2, 5], [2, 4], [3]]")
 @test mytest("Combinat.jl","robinson_schensted([2,3,4,1])","([[1, 3, 4], [2]], [[1, 2, 3], [4]])")
 @test mytest("Combinat.jl","[prime_residues(24)]","1-element Vector{Vector{Int64}}:\n [1, 5, 7, 11, 13, 17, 19, 23]")
 @test mytest("Combinat.jl","primitiveroot(23)","5")
 @test mytest("Combinat.jl","moebius.(1:6)","6-element Vector{Int64}:\n  1\n -1\n -1\n  0\n -1\n  1")
+@test mytest("Combinat.jl","bernoulli(4)","-1//30")
+@test mytest("Combinat.jl","bernoulli(10)","5//66")
+@test mytest("Combinat.jl","bernoulli(12)","-691//2730")
+@test mytest("Combinat.jl","bernoulli(50)","495057205241079648212477525//66")
 end
